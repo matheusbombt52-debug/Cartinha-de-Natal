@@ -1,0 +1,13 @@
+/src/
+/test/
+/worker.js
+/fake-supabase.js
+/servidor-local.mjs
+/config.teste.js
+/wrangler.jsonc
+/wrangler.toml
+/README.md
+/.assetsignore
+/.gitignore
+/node_modules/
+/package.json
