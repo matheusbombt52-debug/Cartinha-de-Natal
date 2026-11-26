@@ -1,0 +1,10 @@
+src
+test
+wrangler.jsonc
+wrangler.toml
+README.md
+.assetsignore
+.gitignore
+config.teste.js
+node_modules
+package.json
