@@ -8,3 +8,8 @@ README.md
 config.teste.js
 node_modules
 package.json
+/.git/
+/.wrangler/
+/worker.js
+/fake-supabase.js
+/servidor-local.mjs

@@ -26,8 +26,7 @@ const json = (obj, status = 200, extra = {}) => new Response(JSON.stringify(obj)
 const erro = (status, msg) => json({ erro: msg }, status);
 
 function novoToken() {
-  const b = crypto.getRandomValues(new Uint8Array(24));
-  return [...b].map(x => x.toString(16).padStart(2, '0')).join('');
+  return crypto.randomUUID();
 }
 function igual(a, b) { // comparação em tempo constante
   a = String(a || ''); b = String(b || '');
@@ -39,6 +38,7 @@ function igual(a, b) { // comparação em tempo constante
 /* ---------- Supabase (só aqui, com a chave secreta do ambiente) ---------- */
 function sbHeaders(env, extra = {}) {
   const k = env.SUPABASE_SECRET_KEY;
+  if (!k || !env.SUPABASE_URL) throw new Error('Configure SUPABASE_URL e SUPABASE_SECRET_KEY nas variaveis do Worker.');
   const h = { apikey: k, ...extra };
   if (!/^sb_/.test(k)) h.authorization = 'Bearer ' + k; // chaves antigas (JWT) também vão em Authorization
   return h;
@@ -159,10 +159,24 @@ async function rota(request, env) {
     const ext = TIPOS[tipo].mimes[mime];
     if (!ext) return erro(415, 'formato não aceito');
     const len = Number(request.headers.get('content-length') || 0);
-    if (!len) return erro(411, 'tamanho ausente');
-    if (len > TIPOS[tipo].max) return erro(413, 'arquivo grande demais');
-    const buf = await request.arrayBuffer();
-    if (buf.byteLength > TIPOS[tipo].max) return erro(413, 'arquivo grande demais');
+    const max = TIPOS[tipo].max;
+    if (len > max) return erro(413, 'arquivo grande demais');
+    if (!request.body) return erro(400, 'arquivo vazio');
+    const reader = request.body.getReader();
+    const chunks = [];
+    let size = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > max) {
+        await reader.cancel();
+        return erro(413, 'arquivo grande demais');
+      }
+      chunks.push(value);
+    }
+    if (!size) return erro(400, 'arquivo vazio');
+    const buf = new Blob(chunks, { type: mime });
     const path = row.id + '/' + nome + '.' + ext;
     if (antigo && antigo.path !== path) await stApagar(env, antigo.path);
     const up = await fetch(stObj(env, path), { method: 'POST', body: buf, headers: sbHeaders(env, { 'content-type': mime, 'x-upsert': 'true', 'cache-control': 'max-age=3600' }) });

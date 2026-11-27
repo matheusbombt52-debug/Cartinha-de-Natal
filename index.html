@@ -2163,6 +2163,21 @@ h3 {
 .adj-t{flex:1;min-width:0;display:grid;line-height:1.3}.adj-t b{font:600 15px var(--font-sans)}.adj-t small{font-size:12px;color:var(--muted-foreground)}
 .adj-go{flex:0 0 auto;width:16px;height:16px;color:var(--muted-foreground);opacity:.7}.adj .ed-ok{margin:0;padding:10px 16px;border-top:1px solid var(--border)}.adj-ft{padding:10px 16px 12px;border-top:1px solid var(--border)}
 .preview-actions.pa-one{display:block}.pa-one .btn{width:100%}</style>
+<style>
+.quiz-page.quiz-page--sem-cabecalho {
+  min-height: 100svh;
+  padding-top: clamp(16px, 4vw, 32px);
+}
+.quiz-page--sem-cabecalho .quiz-top { margin-bottom: 18px; }
+</style>
+<style>
+.mfpage.mf-compact .mfbody{left:24mm;right:24mm;top:44mm;bottom:25mm}
+.mfpage.mf-compact .ps-wrap h1{margin-bottom:4mm}
+.mfpage.mf-compact .ps-wrap p{font-size:12pt;line-height:1.52;margin-bottom:3.5mm}
+.mfpage.mf-compact .ps-wrap .ps-photo{width:115mm;height:65mm;margin:4mm auto 5mm}
+.mfpage.mf-compact .ps-wrap .ps-cl{margin-top:4mm}
+.mfpage.mf-compact .ps-wrap .ps-sig{margin-top:4mm!important}
+</style>
 </head><body><div id="app"></div>
 <style id="pagamento">
 /* v8: tela de pagamento */
@@ -2565,7 +2580,13 @@ function gen(){var r=gen0(),g=S.a.gender;if(S.kind==='santa'){if(g==='ele'||g===
 function gen0(){var k=S.kind,a=S.a,o=a.childLetter.trim();if(k==='santa')return{g:'Ho, ho, ho, '+a.childName.trim()+'!',p:['O Natal está chegando e eu quis preparar uma cartinha só para você!',santaAch(a),'Fiquei muito orgulhoso de saber disso. Cada coisa que você aprende e cada passo que você dá merecem ser comemorados!'].concat(o?[santaLetter(o,a),'Foi muito especial receber suas palavras!']:[],['Que o seu Natal tenha muito carinho, abraços e momentos felizes. Continue descobrindo o mundo com essa vontade de aprender!']),c:'Um abraço cheio de magia,',s:'Papai Noel'};
 return{g:a.recipient.trim()+',',p:['Com o Natal se aproximando, eu quis colocar em palavras algo especial para mim.',a.memory.trim(),'Ter você na minha vida, como '+a.relationship.trim()+', é algo que eu quero celebrar neste Natal.','Eu espero que esta cartinha leve um pouco do meu carinho até você. Que, quando o Natal chegar, você sinta o quanto é especial para mim.'],c:'',s:a.signature.trim()}}
 function fld(key,label,ph,multi,opt){var v=esc(S.a[key]==null?'':S.a[key]);return '<div class="field-group"><label for="'+key+'">'+esc(label)+(opt?'<span class="text-muted-foreground font-normal"> (opcional)</span>':'')+'</label>'+(multi?'<textarea id="'+key+'" data-k="'+key+'" placeholder="'+esc(ph)+'" '+(opt?'':'required ')+'maxlength="2500">'+v+'</textarea>':'<input id="'+key+'" data-k="'+key+'" type="text" value="'+v+'" placeholder="'+esc(ph)+'" '+(opt?'':'required ')+'maxlength="200" autocomplete="off">')+'</div>'}
-function quiz(){return S.done&&S.kind?deliver():S.pay&&S.kind?checkout():quiz0()}
+function quiz(){
+ if(S.done&&S.kind)return deliver();
+ if(S.pay&&S.kind)return checkout();
+ var html=quiz0();
+ if(S.offer)return html;
+ return html.replace(/^<header\b[\s\S]*?<\/header><main class="quiz-page">/, '<main class="quiz-page quiz-page--sem-cabecalho">');
+}
 function quiz0(){var sa=S.kind==='santa',st=S.step,k=S.kind,top;
 if(S.preview&&k){var l=gen();return header(true)+'<main class="quiz-page"><div class="quiz-wrap preview-wrap"><div class="quiz-top">'+btn('ghost',ic('arrow-left')+' Voltar','data-act="back3"')+'<span>Feita com a sua história</span></div><div class="quiz-heading preview-heading"><p class="eyebrow">'+ic('sparkles','size-3')+' Um carinho que virou palavras</p><h1>Sua cartinha ficou pronta! 💌</h1><p>Um detalhe seu. Uma mensagem que só essa pessoa poderia receber.</p></div>'+previewBody(k,l)+'<div class="preview-actions pa-one">'+btn('christmas',ic('send')+'Ver opções de entrega','type="button" data-m="pay"')+'</div><p class="privacy-note">'+ic('lock-keyhole')+' Suas respostas ficam apenas nesta página do navegador.</p></div></main>'}
 var H=sa?['Qual cartinha você quer criar?','Como se chama essa criança especial?','Qual conquista merece um pouco de magia?','A criança já escreveu para o Papai Noel?','Como você quer entregar sua cartinha?','Quer incluir foto ou áudio?']:['Qual cartinha você quer criar?','Quem vai receber seu carinho?','Qual história você quer colocar no papel?','Como você quer assinar?','Como você quer entregar sua cartinha?','Quer incluir foto ou áudio?'];
@@ -3476,6 +3497,17 @@ function paginate(w,f){var blocks=[].filter.call(w.children,function(e){return !
  function over(){var l=cur.w.lastElementChild;return !!l&&l.getBoundingClientRect().bottom-cur.b.getBoundingClientRect().top>cur.b.clientHeight-2}
  function put(el){cur.w.appendChild(el);cur.n++}
  np();
+ blocks.forEach(put);
+ if(over())cur.pg.classList.add('mf-compact');
+ if(!over()){
+   cur.pg.classList.add('solo');
+   cur.pg.remove();
+   host.remove();
+   return out;
+ }
+ cur.pg.classList.remove('mf-compact');
+ blocks.forEach(function(el){el.remove()});
+ cur.n=0;
  for(var i=0;i<blocks.length;i++){var el=blocks[i];put(el);if(!over())continue;
   if(cur.n>1){var prev=el.previousElementSibling,mv=[el];if(prev&&prev.tagName==='H1'&&cur.n>2)mv.unshift(prev);mv.forEach(function(x){cur.w.removeChild(x);cur.n--});np();mv.forEach(put);
    if(!over())continue}
