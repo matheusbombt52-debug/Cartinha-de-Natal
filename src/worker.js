@@ -145,9 +145,13 @@ async function enviarEmail(env,row) {
       headers:{idempotencyKey:order.id}
     })
   });
-  if(!result.ok && (await result.json().catch(()=>null))?.code!=='duplicate_parameter') {
-    console.error('Brevo recusou o envio: HTTP '+result.status);
-    return;
+  if(!result.ok) {
+    const failure=await result.json().catch(()=>null);
+    if(failure?.code!=='duplicate_parameter') {
+      const code=/^[a-z_]{1,50}$/.test(failure?.code||'')?failure.code:'sem_codigo';
+      console.error('Brevo recusou o envio: HTTP '+result.status+' '+code);
+      return;
+    }
   }
   await sbRest(env,filter,{method:'PATCH',body:JSON.stringify({email_enviado_em:new Date().toISOString()})});
 }
@@ -361,7 +365,12 @@ async function cobrarCakto(request, env, row) {
     method:'POST', headers:{Authorization:'Bearer '+access_token,'Content-Type':'application/json','X-Idempotency-Key':attempt.id},
     body:JSON.stringify(payload)
   });
-  if (!payment.ok) return erro(502, 'A Cakto não confirmou a criação da cobrança. Confira os dados e o painel antes de tentar novamente.');
+  if (!payment.ok) {
+    const failure=await payment.json().catch(()=>null);
+    console.error('Cakto cobrança '+method+': HTTP '+payment.status);
+    if(payment.status===409 && typeof failure?.detail==='string' && /em processamento/i.test(failure.detail)) return erro(409,'A Cakto ainda está processando o Pix. Aguarde alguns segundos e toque em Gerar Pix para consultar a mesma tentativa.');
+    return erro(502, 'A Cakto não confirmou a criação da cobrança. Confira os dados e o painel antes de tentar novamente.');
+  }
   const result = await payment.json();
   const resposta = {
     method,status:result.status,
@@ -391,6 +400,12 @@ async function webhookCakto(request, env, origin, ctx) {
   if (!attempt.cakto_id) return erro(503,'Confirmação ainda em processamento.');
   const row=await porId(env,attempt.cartinha_id);
   if (!row || conteudoDe(row).teste) return json({ok:true,ignorado:true});
+  const email=sale.customer?.email;
+  if (!attempt.email_comprador && typeof email==='string' && email.length<=200 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    await sbRest(env,'cartinha_cobrancas?id=eq.'+attempt.id+'&email_comprador=is.null',{
+      method:'PATCH',body:JSON.stringify({email_comprador:email})
+    });
+  }
   const release=await liberar(env,origin,row.id,{origem:'cakto',referencia:String(sale.id)});
   if (!release.ok) return release;
   agendarEmail(env,ctx,await porId(env,row.id));

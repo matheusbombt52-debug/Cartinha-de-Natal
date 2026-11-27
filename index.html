@@ -3810,8 +3810,21 @@ function srvAplicar(r,tc){
  if(SRVPOLL){clearInterval(SRVPOLL);SRVPOLL=null}
  CartinhasPagamento.aplicarCobranca({status:'pago',confirmadoPeloServidor:true,teste:!!(r.pagamento&&r.pagamento.origem==='teste'),linkCartinha:r.link_destinatario||undefined,
   srv:{id:r.id,tc:tc,td:r.token_destinatario,linkComprador:r.link_comprador,linkDestinatario:r.link_destinatario}})}
-function srvPoll(){if(!S.pay||!S.srv||!S.srv.id||S.done){clearInterval(SRVPOLL);SRVPOLL=null;return}var tc=S.srv.tc;
- srvApi('GET','/api/acesso/'+tc).then(function(r){if(r.liberada&&S.srv&&S.srv.tc===tc)srvAplicar(r,tc)},function(){})}
+let consultaPagamentoAtiva=null;
+function srvPoll(){
+ if(!S.pay||!S.srv?.id||S.done){clearInterval(SRVPOLL);SRVPOLL=null;return}
+ const tc=S.srv.tc;
+ if(consultaPagamentoAtiva===tc)return;
+ consultaPagamentoAtiva=tc;
+ srvApi('GET','/api/acesso/'+tc).then(r=>{
+  if(r.liberada&&S.srv?.tc===tc&&S.pay&&!S.done)srvAplicar(r,tc);
+ }).catch(()=>{}).finally(()=>{if(consultaPagamentoAtiva===tc)consultaPagamentoAtiva=null});
+}
+function consultarAoVoltar(){if(S.pay&&!document.hidden)srvPoll()}
+window.addEventListener('focus',consultarAoVoltar);
+window.addEventListener('pageshow',consultarAoVoltar);
+document.addEventListener('visibilitychange',consultarAoVoltar);
+
 document.addEventListener('click',function(e){var t=e.target.closest('[data-m=simpay]');if(!t||!TESTE.ativo()||!(S.srv&&S.srv.id))return;e.stopImmediatePropagation();if(S.simBusy)return;S.simBusy=true;keep();
  var st=S.srv,h={'x-token-comprador':st.tc};
  srvApi('POST','/api/teste/liberar',{cartinha_id:st.id},h).then(function(){return srvApi('GET','/api/acesso/'+st.tc)}).then(function(r){S.simBusy=false;if(r.liberada)srvAplicar(r,st.tc);else keep()},function(err){S.simBusy=false;keep();window.alert(err.message||'Não foi possível simular o pagamento.')})},true);
@@ -3848,7 +3861,7 @@ var drawS=draw;draw=function(){var m=location.hash.match(/^#(carta|acesso)-([A-Z
    try{lucide.createIcons()}catch(x){}var b=document.getElementById('qrbox');if(b)b.appendChild(qrCanvas(linkDe(a)));top0();return}}
  drawS.apply(this,arguments);
  if(S.preview&&S.kind&&!S.prep&&!S.done&&!S.pay)srvKick();
- if(S.pay&&S.srv&&S.srv.id&&!S.done&&!SRVPOLL)SRVPOLL=setInterval(srvPoll,4000)};
+ if(S.pay&&S.srv&&S.srv.id&&!S.done&&!SRVPOLL)SRVPOLL=setInterval(srvPoll,2500)};
 document.addEventListener('click',function(e){if(e.target.closest('[data-m=accretry]'))draw()});
 var rv9=recv;recv=function(t){return rv9(t).replace('Na demonstração, as cartinhas ficam só na memória do navegador de quem criou.','Confira o link com quem enviou. Se a cartinha foi criada há pouco, o pagamento pode ainda estar sendo confirmado.')};
 
