@@ -114,7 +114,45 @@ async function comprador(request, env, id) {
   return [row, null];
 }
 
-async function rota(request, env) {
+const midiasProntas = c => (c.midias_esperadas || []).every(nome => !!(c.midias || {})[nome]);
+
+
+function agendarEmail(env, ctx, row) {
+  if (!ctx || !env.BREVO_API_KEY || !env.BREVO_FROM_EMAIL || !row?.liberada_em) return;
+  const carta=conteudoDe(row);
+  if (carta.pagamento?.origem!=='cakto' || !midiasProntas(carta)) return;
+  ctx.waitUntil(enviarEmail(env,row).catch(()=>console.error('Falha no envio da Cartinha de Natal pelo Brevo.')));
+}
+
+async function enviarEmail(env,row) {
+  const ref=conteudoDe(row).pagamento.referencia;
+  const filter='cartinha_cobrancas?cartinha_id=eq.'+row.id+'&cakto_id=eq.'+encodeURIComponent(ref);
+  const now=new Date().toISOString();
+  const stale=new Date(Date.now()-120000).toISOString();
+  const claimed=await sbRest(env,filter+'&email_enviado_em=is.null&email_comprador=not.is.null&or=(email_tentativa_em.is.null,email_tentativa_em.lt.'+stale+')',{
+    method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({email_tentativa_em:now})
+  });
+  const order=claimed[0];
+  if(!order) return;
+  const url='https://cartinha-de-natal.pv2.workers.dev/#acesso-'+encodeURIComponent(row.token_comprador);
+  const result=await fetch('https://api.brevo.com/v3/smtp/email',{
+    method:'POST',redirect:'error',headers:{'api-key':env.BREVO_API_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify({
+      sender:{name:'Cartinhas de Natal',email:env.BREVO_FROM_EMAIL},
+      subject:'Sua Cartinha de Natal está pronta!',
+      htmlContent:'<h1>Sua Cartinha de Natal está pronta!</h1><p>Abra o seu acesso para imprimir ou compartilhar a cartinha.</p><p><a href="'+url+'">Acessar minha cartinha</a></p><p>Guarde este e-mail para voltar ao seu pedido.</p>',
+      messageVersions:[{to:[{email:order.email_comprador}]}],
+      headers:{idempotencyKey:order.id}
+    })
+  });
+  if(!result.ok && (await result.json().catch(()=>null))?.code!=='duplicate_parameter') {
+    console.error('Brevo recusou o envio: HTTP '+result.status);
+    return;
+  }
+  await sbRest(env,filter,{method:'PATCH',body:JSON.stringify({email_enviado_em:new Date().toISOString()})});
+}
+
+async function rota(request, env, ctx) {
   const url = new URL(request.url), p = url.pathname, m = request.method, origin = url.origin;
   let x;
 
@@ -122,7 +160,7 @@ async function rota(request, env) {
     const active = caktoReady(env);
     return json({active, clientId:active ? env.CAKTO_CLIENT_ID : null});
   }
-  if (p === '/api/cakto/webhook' && m === 'POST') return webhookCakto(request, env, origin);
+  if (p === '/api/cakto/webhook' && m === 'POST') return webhookCakto(request, env, origin, ctx);
   if ((x=p.match(/^\/api\/cakto\/cobrancas\/([^/]+)$/)) && m === 'POST') {
     const [row, bad]=await comprador(request,env,x[1]);
     return bad || cobrarCakto(request,env,row);
@@ -196,11 +234,12 @@ async function rota(request, env) {
     const up = await fetch(stObj(env, path), { method: 'POST', body: buf, headers: sbHeaders(env, { 'content-type': mime, 'x-upsert': 'true', 'cache-control': 'max-age=3600' }) });
     if (!up.ok) return erro(502, 'falha ao guardar a mídia');
     c.midias[nome] = { path, mime, size: buf.size };
-    await salvarConteudo(env, row.id, c);
+    const gravada=await salvarConteudo(env, row.id, c);
+    agendarEmail(env,ctx,gravada);
     return json({ ok: true, nome });
   }
 
-  const midiasProntas = c => (c.midias_esperadas || []).every(nome => !!(c.midias || {})[nome]);
+
 
   /* o comprador (link privado) lê o estado; é também o que o navegador consulta para saber se o pagamento foi confirmado */
   if ((x = p.match(/^\/api\/acesso\/([^/]+)$/)) && m === 'GET') {
@@ -209,6 +248,7 @@ async function rota(request, env) {
     const c = conteudoDe(row), lib = !!row.liberada_em;
     if (!lib) return json({ id: row.id, liberada: false });
     if (!midiasProntas(c)) return json({ id: row.id, liberada: true, midias_pendentes: true });
+    agendarEmail(env,ctx,row);
     const l = links(origin, row, c);
     return json({ id: row.id, liberada: true, liberada_em: row.liberada_em, criada_em: row.criada_em, pagamento: c.pagamento || null,
       link_comprador: l.comprador, link_destinatario: l.destinatario, token_destinatario: row.token_destinatario,
@@ -298,7 +338,7 @@ async function cobrarCakto(request, env, row) {
   if (!attempt) {
     await sbRest(env, 'cartinha_cobrancas?on_conflict=cartinha_id', {
       method:'POST', headers:{Prefer:'resolution=ignore-duplicates,return=minimal'},
-      body:JSON.stringify({cartinha_id:row.id, id:body.attempt, metodo:method})
+      body:JSON.stringify({cartinha_id:row.id, id:body.attempt, metodo:method, email_comprador:c.email})
     });
     attempt = await tentativaPor(env, filtro);
   }
@@ -331,7 +371,7 @@ async function cobrarCakto(request, env, row) {
   return json(resposta);
 }
 
-async function webhookCakto(request, env, origin) {
+async function webhookCakto(request, env, origin, ctx) {
   const stamp=request.headers.get('x-cakto-timestamp')||'';
   const signature=request.headers.get('x-cakto-signature')||'';
   if (!env.CAKTO_WEBHOOK_SECRET || !/^\d{10}$/.test(stamp) || Math.abs(Date.now()/1000-Number(stamp))>300 || !/^v1=[a-f0-9]{64}$/i.test(signature)) return erro(401,'assinatura inválida');
@@ -352,15 +392,17 @@ async function webhookCakto(request, env, origin) {
   const row=await porId(env,attempt.cartinha_id);
   if (!row || conteudoDe(row).teste) return json({ok:true,ignorado:true});
   const release=await liberar(env,origin,row.id,{origem:'cakto',referencia:String(sale.id)});
-  return release.ok ? json({ok:true}) : release;
+  if (!release.ok) return release;
+  agendarEmail(env,ctx,await porId(env,row.id));
+  return json({ok:true});
 }
 
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname.startsWith('/api/')) {
-      try { return await rota(request, env); }
+      try { return await rota(request, env, ctx); }
       catch (e) { console.error(e && e.message); return erro(500, 'erro no servidor'); }
     }
     return env.ASSETS ? env.ASSETS.fetch(request) : new Response('Not found', { status: 404 });
