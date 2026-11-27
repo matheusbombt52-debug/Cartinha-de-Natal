@@ -121,7 +121,11 @@ function agendarEmail(env, ctx, row) {
   if (!ctx || !env.BREVO_API_KEY || !env.BREVO_FROM_EMAIL || !row?.liberada_em) return;
   const carta=conteudoDe(row);
   if (carta.pagamento?.origem!=='cakto' || !midiasProntas(carta)) return;
-  ctx.waitUntil(enviarEmail(env,row).catch(()=>console.error('Falha no envio da Cartinha de Natal pelo Brevo.')));
+  ctx.waitUntil(enviarEmail(env,row).catch(error=>{
+    const phase=error.brevoPhase||'preparacao';
+    const dbStatus=/^supabase (\d{3})\b/.exec(error.message||'')?.[1];
+    console.error('Brevo: falha na etapa '+phase+(dbStatus?' (Supabase HTTP '+dbStatus+')':''));
+  }));
 }
 
 async function enviarEmail(env,row) {
@@ -131,20 +135,26 @@ async function enviarEmail(env,row) {
   const stale=new Date(Date.now()-120000).toISOString();
   const claimed=await sbRest(env,filter+'&email_enviado_em=is.null&email_comprador=not.is.null&or=(email_tentativa_em.is.null,email_tentativa_em.lt.'+stale+')',{
     method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({email_tentativa_em:now})
-  });
+  }).catch(error=>{error.brevoPhase='reservar_envio';throw error});
   const order=claimed[0];
   if(!order) return;
   const url='https://cartinha-de-natal.pv2.workers.dev/#acesso-'+encodeURIComponent(row.token_comprador);
+  const key=env.BREVO_API_KEY.trim();
+  const from=env.BREVO_FROM_EMAIL.trim();
+  if(!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(from) || !key || /[^!-~]/.test(key)){
+    console.error('Brevo: confira o formato de BREVO_FROM_EMAIL e BREVO_API_KEY no Cloudflare.');
+    return;
+  }
   const result=await fetch('https://api.brevo.com/v3/smtp/email',{
-    method:'POST',redirect:'error',headers:{'api-key':env.BREVO_API_KEY,'Content-Type':'application/json'},
+    method:'POST',redirect:'error',headers:{'api-key':key,'Content-Type':'application/json'},
     body:JSON.stringify({
-      sender:{name:'Cartinhas de Natal',email:env.BREVO_FROM_EMAIL},
+      sender:{name:'Cartinhas de Natal',email:from},
       subject:'Sua Cartinha de Natal está pronta!',
       htmlContent:'<h1>Sua Cartinha de Natal está pronta!</h1><p>Abra o seu acesso para imprimir ou compartilhar a cartinha.</p><p><a href="'+url+'">Acessar minha cartinha</a></p><p>Guarde este e-mail para voltar ao seu pedido.</p>',
       messageVersions:[{to:[{email:order.email_comprador}]}],
       headers:{idempotencyKey:order.id}
     })
-  });
+  }).catch(error=>{error.brevoPhase='conectar_api_brevo';throw error});
   if(!result.ok) {
     const failure=await result.json().catch(()=>null);
     if(failure?.code!=='duplicate_parameter') {
@@ -153,7 +163,8 @@ async function enviarEmail(env,row) {
       return;
     }
   }
-  await sbRest(env,filter,{method:'PATCH',body:JSON.stringify({email_enviado_em:new Date().toISOString()})});
+  await sbRest(env,filter,{method:'PATCH',body:JSON.stringify({email_enviado_em:new Date().toISOString()})}).catch(error=>{error.brevoPhase='registrar_envio';throw error});
+  console.info('Brevo: envio aceito e registrado.');
 }
 
 async function rota(request, env, ctx) {
