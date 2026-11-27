@@ -26,8 +26,7 @@ const json = (obj, status = 200, extra = {}) => new Response(JSON.stringify(obj)
 const erro = (status, msg) => json({ erro: msg }, status);
 
 function novoToken() {
-  const b = crypto.getRandomValues(new Uint8Array(24));
-  return [...b].map(x => x.toString(16).padStart(2, '0')).join('');
+  return crypto.randomUUID();
 }
 function igual(a, b) { // comparação em tempo constante
   a = String(a || ''); b = String(b || '');
