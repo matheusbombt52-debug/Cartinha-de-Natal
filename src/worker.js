@@ -118,6 +118,17 @@ async function rota(request, env) {
   const url = new URL(request.url), p = url.pathname, m = request.method, origin = url.origin;
   let x;
 
+  if (p === '/api/cakto/config' && m === 'GET') {
+    const active = caktoReady(env);
+    return json({active, clientId:active ? env.CAKTO_CLIENT_ID : null});
+  }
+  if (p === '/api/cakto/webhook' && m === 'POST') return webhookCakto(request, env, origin);
+  if ((x=p.match(/^\/api\/cakto\/cobrancas\/([^/]+)$/)) && m === 'POST') {
+    const [row, bad]=await comprador(request,env,x[1]);
+    return bad || cobrarCakto(request,env,row);
+  }
+
+
   /* cria um registro novo para cada cartinha */
   if (p === '/api/cartinhas' && m === 'POST') {
     const body = await request.json().catch(() => null);
@@ -241,7 +252,7 @@ async function rota(request, env) {
   if (p === '/api/teste/liberar' && m === 'POST') {
     const host = url.hostname;
     const local = env.AMBIENTE === 'teste' && ['localhost', '127.0.0.1'].includes(host);
-    if (!local && env.TESTE_SEM_COBRANCA !== 'ativo') return erro(404, 'não encontrada');
+    if (!local && (caktoReady(env) || env.TESTE_SEM_COBRANCA !== 'ativo')) return erro(404, 'não encontrada');
     const body = await request.json().catch(() => null);
     const [row, bad] = await comprador(request, env, String(body && body.cartinha_id || '')); if (bad) return bad;
     if (!local && conteudoDe(row).teste !== true) return erro(403, 'cartinha fora do modo de teste');
@@ -261,6 +272,89 @@ async function liberar(env, origin, id, pagamento) {
   const l = links(origin, row, c);
   return json({ ok: true, link_comprador: l.comprador, link_destinatario: l.destinatario });
 }
+
+
+const CAKTO = 'https://api.cakto.com.br/public_api/';
+const caktoReady = env => Boolean(env.CAKTO_CLIENT_ID && env.CAKTO_CLIENT_SECRET && env.CAKTO_OFFER_ID && env.CAKTO_WEBHOOK_SECRET);
+const uuidRE = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+const tentativaPor = async (env, filtro) => (await sbRest(env, 'cartinha_cobrancas?' + filtro + '&limit=1'))[0];
+
+async function cobrarCakto(request, env, row) {
+  if (!caktoReady(env)) return erro(503, 'Pagamento indisponível no momento.');
+  if (row.liberada_em || conteudoDe(row).teste) return erro(409, 'Pedido já liberado ou de teste.');
+  const body = await request.json().catch(() => null);
+  const method = body?.method;
+  const c = body?.customer;
+  if (!['pix', 'credit_card'].includes(method) || !c || !uuidRE.test(body.attempt || '')) return erro(400, 'Dados de pagamento inválidos.');
+  if (!s(c.name, 120) || !c.name.trim() || !s(c.email, 200) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.email) ||
+      !/^55\d{10,11}$/.test(c.phone) || !/^\d{11}$/.test(c.cpf) || !uuidRE.test(c.fingerprint || '')) return erro(400, 'Confira nome, e-mail, telefone e CPF.');
+  if (method === 'credit_card' && (!s(body.cardToken, 4096) || !body.cardToken || !s(body.profiling, 4096) || !body.profiling)) return erro(400, 'Token do cartão inválido.');
+  const auth = await fetch(CAKTO + 'token/', {method:'POST', body:new URLSearchParams({client_id:env.CAKTO_CLIENT_ID,client_secret:env.CAKTO_CLIENT_SECRET})});
+  if (!auth.ok) return erro(503, 'Não conseguimos conectar ao pagamento.');
+  const {access_token} = await auth.json();
+  if (!access_token) return erro(503, 'Não conseguimos conectar ao pagamento.');
+  const filtro = 'cartinha_id=eq.' + row.id;
+  let attempt = await tentativaPor(env, filtro);
+  if (!attempt) {
+    await sbRest(env, 'cartinha_cobrancas?on_conflict=cartinha_id', {
+      method:'POST', headers:{Prefer:'resolution=ignore-duplicates,return=minimal'},
+      body:JSON.stringify({cartinha_id:row.id, id:body.attempt, metodo:method})
+    });
+    attempt = await tentativaPor(env, filtro);
+  }
+  if (!attempt) return erro(503, 'Não foi possível registrar a cobrança.');
+  if (attempt.resposta) return json(attempt.resposta);
+  if (attempt.id !== body.attempt || attempt.metodo !== method) return erro(409, 'Já existe uma tentativa de cobrança para esta cartinha.');
+  if (Date.now() - Date.parse(attempt.criada_em) > 23 * 3600000) return erro(409, 'Esta tentativa precisa ser conferida no painel de pagamentos.');
+  const payload = {
+    paymentMethod:method,
+    customer:{name:c.name.trim(),email:c.email,phone:c.phone,docType:'cpf',docNumber:c.cpf,fingerprint:c.fingerprint},
+    items:[{offerId:env.CAKTO_OFFER_ID,quantity:1,offerType:'main'}],
+    metadata:{sck:attempt.id}
+  };
+  if (method === 'credit_card') {
+    payload.card={token:body.cardToken};
+    payload.installments=1;
+    payload.antifraud_profiling_attempt_reference=body.profiling;
+  }
+  const payment = await fetch(CAKTO + 'payments/', {
+    method:'POST', headers:{Authorization:'Bearer '+access_token,'Content-Type':'application/json','X-Idempotency-Key':attempt.id},
+    body:JSON.stringify(payload)
+  });
+  if (!payment.ok) return erro(502, 'A Cakto não confirmou a criação da cobrança. Confira os dados e o painel antes de tentar novamente.');
+  const result = await payment.json();
+  const resposta = {
+    method,status:result.status,
+    pix:method==='pix' && result.pix ? {code:result.pix.qrCode,expiration:result.pix.expirationDate} : null
+  };
+  await sbRest(env, 'cartinha_cobrancas?id=eq.'+attempt.id, {method:'PATCH',body:JSON.stringify({cakto_id:result.id,resposta})});
+  return json(resposta);
+}
+
+async function webhookCakto(request, env, origin) {
+  const stamp=request.headers.get('x-cakto-timestamp')||'';
+  const signature=request.headers.get('x-cakto-signature')||'';
+  if (!env.CAKTO_WEBHOOK_SECRET || !/^\d{10}$/.test(stamp) || Math.abs(Date.now()/1000-Number(stamp))>300 || !/^v1=[a-f0-9]{64}$/i.test(signature)) return erro(401,'assinatura inválida');
+  const body=await request.text();
+  const encoder=new TextEncoder();
+  const key=await crypto.subtle.importKey('raw',encoder.encode(env.CAKTO_WEBHOOK_SECRET),{name:'HMAC',hash:'SHA-256'},false,['verify']);
+  const mac=Uint8Array.from(signature.slice(3).match(/../g),hex=>parseInt(hex,16));
+  if (!await crypto.subtle.verify('HMAC',key,mac,encoder.encode(stamp+'.'+body))) return erro(401,'assinatura inválida');
+  let event;
+  try { event=JSON.parse(body); } catch { return erro(400,'evento inválido'); }
+  const sale=event?.data;
+  if (event?.event!=='purchase_approved' || sale?.status!=='paid') return json({ok:true});
+  if (!uuidRE.test(sale.sck||'') || !sale.id || sale.offer?.id!==env.CAKTO_OFFER_ID ||
+      Number(sale.baseAmount)!==10 || Number(sale.amount)<10 || sale.currency!=='BRL') return json({ok:true,ignorado:true});
+  const attempt=await tentativaPor(env,'id=eq.'+sale.sck);
+  if (!attempt || attempt.metodo!==sale.paymentMethod || (attempt.cakto_id && attempt.cakto_id!==sale.id)) return json({ok:true,ignorado:true});
+  if (!attempt.cakto_id) return erro(503,'Confirmação ainda em processamento.');
+  const row=await porId(env,attempt.cartinha_id);
+  if (!row || conteudoDe(row).teste) return json({ok:true,ignorado:true});
+  const release=await liberar(env,origin,row.id,{origem:'cakto',referencia:String(sale.id)});
+  return release.ok ? json({ok:true}) : release;
+}
+
 
 export default {
   async fetch(request, env) {

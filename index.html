@@ -2178,7 +2178,19 @@ h3 {
 .mfpage.mf-compact .ps-wrap .ps-cl{margin-top:4mm}
 .mfpage.mf-compact .ps-wrap .ps-sig{margin-top:4mm!important}
 </style>
-</head><body><div id="app"></div>
+<style>
+.vc-row{flex-wrap:wrap;gap:8px;padding-left:0}
+.vc-s{width:44px;height:44px;background:var(--sc);flex:none}
+.vc-s::after{pointer-events:none}
+.vt-selected-color{font-size:.85rem;color:var(--muted-foreground)}
+article.letter-paper.dg.th-classico{box-shadow:0 0 0 2px #fff9e8,0 0 0 3px var(--ln),0 10px 23px #53371930}
+article.letter-paper.dg.th-polo{--pp:#f3faff;border:2px solid var(--c)}
+article.letter-paper.dg.th-polo::before{border-style:dotted}
+article.letter-paper.dg.th-carinho{--pp:#fff1eb;border:3px double var(--c)}
+article.letter-paper.dg.th-carinho::before{border-style:solid;border-color:color-mix(in srgb,var(--c) 30%,transparent)}
+article.letter-paper.dg.th-noite{--pp:#142238;--tx:#fff6dc;border:3px double var(--c)}
+article.letter-paper.dg.th-noite::before{border-style:solid}
+</style></head><body><div id="app"></div>
 <style id="pagamento">
 /* v8: tela de pagamento */
 .pay-page{max-width:32rem;margin-inline:auto}
@@ -2268,8 +2280,8 @@ h3 {
 #psheet.fxp .fxt tbody td{padding:0 22mm;vertical-align:top}
 #psheet.fxp .ps-fx{position:fixed;left:0;right:0;top:0;bottom:0}}
 /* v14 — temas e cores */
-.th-classico{--lp:#fffaf0;--lt:#2b2b2b;--la:#b3262d;--la2:color-mix(in srgb,var(--la) 55%,#000);--fr:repeating-linear-gradient(45deg,var(--la) 0 12px,var(--lp) 12px 18px,var(--la2) 18px 30px,var(--lp) 30px 36px)}
-.th-classico.th-def{--la2:#1f6b45}
+.th-classico{--lp:#fffaf0;--lt:#2b2b2b;--la:#b3262d;--la2:#2f5d3a;--fr:repeating-linear-gradient(45deg,var(--la) 0 12px,var(--lp) 12px 18px,var(--la2) 18px 30px,var(--lp) 30px 36px)}
+
 .th-polo{--lp:#eef6fc;--lt:#16324a;--la:#2f6fa8;--fr:repeating-linear-gradient(135deg,var(--la) 0 10px,#fff 10px 16px)}
 .th-carinho{--lp:#fff2ee;--lt:#4a2b30;--la:#c2456b;--fr:repeating-linear-gradient(90deg,var(--la) 0 7px,var(--lp) 7px 12px)}
 .th-noite{--lp:#16254a;--lt:#f3eedc;--la:#e8b84a;--lw:#8fc3a0;--fr:linear-gradient(135deg,var(--la),color-mix(in srgb,var(--la) 40%,#16254a))}
@@ -2451,6 +2463,7 @@ article.letter-paper.dg{--c:var(--la,var(--primary));--pp:var(--lp,oklch(0.965 0
  -webkit-print-color-adjust:exact;print-color-adjust:exact}
 article.letter-paper.dg.santa:not(.thx){--c:var(--pine-deep)}
 article.letter-paper.dg.personal:not(.thx){--c:var(--primary)}
+article.letter-paper.dg.th-classico{--pp:oklch(0.965 0.04 75);--tx:oklch(0.32 0.04 55);--c:color-mix(in srgb,var(--la) 76%,#272016)}
 article.letter-paper.dg::before{inset:10px;border:1.5px dashed color-mix(in srgb,var(--c) 42%,transparent);border-radius:12px}
 article.letter-paper.dg .letter-decoration{color:var(--c);margin-bottom:14px}
 article.letter-paper.dg .letter-decoration::before,article.letter-paper.dg .letter-decoration::after{background:color-mix(in srgb,var(--c) 38%,transparent)}
@@ -2558,13 +2571,13 @@ function btn(v,inner,x){return '<button class="btn v-'+v+(v==='christmas'?' crea
 function link(inner,cls,to,x){return '<a href="#'+(to||'')+'" data-go="'+(to||'')+'" class="'+cls+'" '+(x||'')+'>'+inner+'</a>'}
 function create(t,cls){return link((t||'Criar minha cartinha de Natal')+ic('arrow-right'),'btn v-christmas create-button '+(cls||''),'criar')}
 function brand(){return link(ic('mail','brand-icon')+'<span class="brand-name">Cartinhas de Natal<span class="brand-subtitle">Pequenas palavras, grandes afetos</span></span>','brand','','aria-label="Cartinhas de Natal — início"')}
-function header(compact){return '<header class="site-header"><div class="site-width header-inner">'+brand()+(compact?'<span class="hidden sm-flex items-center gap-2 text-xs text-muted-foreground">'+ic('sparkles','size-3 text-gold')+'Uma surpresa com a sua história</span>':'<nav class="header-nav" aria-label="Navegação principal"><a href="#como-funciona" data-scroll="como-funciona">Como funciona</a><a href="#duvidas" data-scroll="duvidas">Dúvidas</a>'+create('Criar cartinha','header-cta')+'</nav>')+'</div></header>'}
+function header(compact){if(compact)return '';return '<header class="site-header"><div class="site-width header-inner">'+brand()+(compact?'<span class="hidden sm-flex items-center gap-2 text-xs text-muted-foreground">'+ic('sparkles','size-3 text-gold')+'Uma surpresa com a sua história</span>':'<nav class="header-nav" aria-label="Navegação principal"><a href="#como-funciona" data-scroll="como-funciona">Como funciona</a><a href="#duvidas" data-scroll="duvidas">Dúvidas</a>'+create('Criar cartinha','header-cta')+'</nav>')+'</div></header>'}
 function paper(k,g,ps,s,cl){return '<article class="letter-paper '+k+'" aria-label="'+(k==='santa'?'Carta do Papai Noel':'Cartinha pessoal')+'"><div class="letter-decoration">'+ic(k==='santa'?'tree-pine':'star')+'</div><h3>'+esc(g)+'</h3><div class="letter-body">'+ps.map(function(p){return '<p>'+esc(p)+'</p>'}).join('')+'</div>'+(cl?'<p class="letter-closing">'+esc(cl)+'</p>':'')+'<p class="letter-signature">'+esc(s)+'</p><span class="letter-stamp" aria-hidden="true">'+ic('star','size-5')+'</span></article>'}
 var TI=['share-2','truck','clock-3','shield-check','lock','pencil-line','sparkles'],PI=['message-circle','map-pin','sparkles'],RI=['baby','heart-handshake','plane','users'],SI=['mail','pencil-line','scroll-text','gift'],RT=['tone-red','tone-pine','tone-gold','tone-red'];
 function home(){var tk=[false,true].map(function(r){return '<ul class="hero-ticker-group"'+(r?' aria-hidden="true"':'')+'>'+C.heroTicker.map(function(m,i){return '<li class="hero-ticker-item">'+esc(m)+'</li>'}).join('')+'</ul>'}).join('');
 return '<main><div class="hero-ticker" aria-label="Por que criar sua cartinha aqui"><div class="hero-ticker-track">'+tk+'</div></div>'+
 '<section class="hero"><div class="site-width hero-inner hero-intro"><div class="hero-copy"><p class="eyebrow">'+esc(C.hero.eyebrow)+'</p><h1>Surpreenda quem você ama com uma <em>cartinha de Natal</em> que dá vontade de guardar.</h1></div></div><img class="hero-image" src="'+HERO+'" alt="Duas cartinhas de Natal coloridas sobre a mesa"><div class="site-width hero-inner hero-details"><div class="hero-copy"><p class="hero-description">'+esc(C.hero.subtitle)+'</p>'+create()+heroProof()+'</div></div></section>'+
-'<section class="section"><div class="site-width"><div class="section-heading"><p class="eyebrow">'+ic('star','size-3')+' Uma mensagem que só vocês entendem</p><h2>'+esc(C.solution.title)+'</h2><p>'+esc(C.solution.subtitle)+'</p></div><div class="letter-examples">'+C.examples.map(function(e){return '<div><div class="example-caption"><p>'+esc(e.title)+'</p><span>Exemplo</span></div>'+(e.paras?exSheet(e):paper(e.kind,e.greeting,[e.text],e.signature))+'</div>'}).join('')+'</div><div class="ex-note"><p>Deixe a cartinha com a sua cara: adicione uma foto, um vídeo ou um recado com sua voz.</p><p>Envie pelo WhatsApp ou imprima para entregar pessoalmente.</p></div></div></section>'+
+'<section class="section"><div class="site-width"><div class="section-heading"><p class="eyebrow">'+ic('star','size-3')+' Uma mensagem que só vocês entendem</p><h2>'+esc(C.solution.title)+'</h2><p>'+esc(C.solution.subtitle)+'</p></div><div class="letter-examples">'+C.examples.map(function(e){return '<div><div class="example-caption"><p>'+esc(e.title)+'</p><span>Exemplo</span></div>'+(e.paras?exSheet(e):paper(e.kind,e.greeting,[e.text],e.signature))+'</div>'}).join('')+'</div><div class="ex-note"><p>Deixe a cartinha com a sua cara: adicione uma foto ou um recado com sua voz.</p><p>Envie pelo WhatsApp ou imprima para entregar pessoalmente.</p></div></div></section>'+
 '<section class="section moments"><div class="site-width"><div class="moments-header"><div><p class="eyebrow">Pequenos gestos, grandes memórias</p><h2>Muito mais do que uma cartinha de Natal.</h2></div></div><div class="deck-area" id="deck" role="group" aria-label="Momentos para surpreender no Natal" tabindex="0"></div><div class="deck-counter" id="deckc"></div><p class="deck-hint">👉 Deslize para descobrir mais ideias.</p></div></section>'+
 '<section class="section pine-section"><div class="site-width"><div class="section-heading"><p class="eyebrow">Neste Natal, faça diferente</p><h2>Antes que chegue a noite de Natal e fique tudo igual de novo…</h2></div><div class="pain-grid">'+C.pains.map(function(p,i){return '<div class="pain-item">'+ic(PI[i]||'heart')+'<p>'+esc(p)+'</p></div>'}).join('')+'</div><p class="pain-footer">Uma lembrança, um agradecimento ou uma conquista<br class="hidden sm-block"> da criança já é o suficiente para começar.</p></div></section>'+
 '<section class="section" id="como-funciona"><div class="site-width"><div class="section-heading"><p class="eyebrow">Simples como um gesto de carinho</p><h2>Prepare agora e envie quando quiser surpreender</h2></div><div class="steps-grid">'+C.steps.map(function(s,i){return '<div class="step-item"><span class="step-number">'+ic(SI[i]||'gift')+'<b>'+(i+1)+'</b></span><p>'+stp(s)+'</p></div>'}).join('')+'</div><div class="center-cta"><p class="time-note">'+ic('clock-3','size-3.5')+' Meta: cartinha básica em até 5 minutos (fotos e áudio ficam por sua conta)</p>'+create('Quero criar minha cartinha')+'</div></div></section>'+
@@ -2585,7 +2598,7 @@ function quiz(){
  if(S.pay&&S.kind)return checkout();
  var html=quiz0();
  if(S.offer)return html;
- return html.replace(/^<header\b[\s\S]*?<\/header><main class="quiz-page">/, '<main class="quiz-page quiz-page--sem-cabecalho">');
+ return html.replace(/^<main class="quiz-page">/, '<main class="quiz-page quiz-page--sem-cabecalho">');
 }
 function quiz0(){var sa=S.kind==='santa',st=S.step,k=S.kind,top;
 if(S.preview&&k){var l=gen();return header(true)+'<main class="quiz-page"><div class="quiz-wrap preview-wrap"><div class="quiz-top">'+btn('ghost',ic('arrow-left')+' Voltar','data-act="back3"')+'<span>Feita com a sua história</span></div><div class="quiz-heading preview-heading"><p class="eyebrow">'+ic('sparkles','size-3')+' Um carinho que virou palavras</p><h1>Sua cartinha ficou pronta! 💌</h1><p>Um detalhe seu. Uma mensagem que só essa pessoa poderia receber.</p></div>'+previewBody(k,l)+'<div class="preview-actions pa-one">'+btn('christmas',ic('send')+'Ver opções de entrega','type="button" data-m="pay"')+'</div><p class="privacy-note">'+ic('lock-keyhole')+' Suas respostas ficam apenas nesta página do navegador.</p></div></main>'}
@@ -2595,7 +2608,7 @@ var body;if(st===0){body='<div class="choice-list">'+btn('letter',ic('tree-pine'
 else if(st===4){body=dvBlock()}else{var f='';if(st===1)f=sa?fld('childName','Primeiro nome ou apelido da criança','Ex.: Sofia'):fld('recipient','Nome ou como você chama essa pessoa','Ex.: Mãe, Ana, vovó Lúcia')+fld('relationship','Qual é a relação de vocês?','Ex.: minha mãe, meu companheiro, minha melhor amiga');
 if(st===2)f=sa?fld('achievement','O que a criança aprendeu, fez ou conquistou?','Ex.: Aprendeu a andar de bicicleta sem rodinhas, mesmo com medo no começo.',1)+'<p class="field-hint">Uma conquista pequena também pode ser muito especial.</p>':fld('memory','Sua lembrança ou agradecimento','Ex.: Mãe, tentei fazer sua rabanada e lembrei de nós na cozinha, disputando a primeira.',1)+'<p class="field-hint">Escreva como você contaria para essa pessoa. Use “eu” ou “nós” e só os detalhes que quer incluir.</p>';
 if(st===3)f=sa?fld('childLetter','O que da cartinha da criança você quer mencionar?','Ex.: Escreveu que estava com saudade da vovó.',1,1)+'<p class="field-hint">Se a criança não escreveu ou você não quiser incluir nada, pode deixar em branco. O Papai Noel não promete presentes.</p>':fld('signature','Sua assinatura','Ex.: Com carinho, sua filha');body='<div class="quiz-fields">'+f+(st===1?gdBlock():'')+'</div>'+(st===5?mediaBlock():'')}
-return header(true)+'<main class="quiz-page"><div class="quiz-wrap"><div class="quiz-top">'+(st===0?link(ic('arrow-left')+' Voltar ao início','btn v-ghost',''):btn('ghost',ic('arrow-left')+' Voltar','type="button" data-act="prev"'))+'<span>Etapa '+(st+1)+' de 7</span></div><div class="quiz-progress">'+[0,1,2,3,4,5,6].map(function(i){return '<span class="'+(i<=st?'complete':'')+'"></span>'}).join('')+'</div><div class="quiz-heading"><p class="eyebrow">'+ic('sparkles','size-3')+' '+(st===0?'Sua surpresa começa aqui':sa?'Uma cartinha do Papai Noel':'Uma cartinha com o seu carinho')+'</p><h1>'+H[st]+'</h1><p>'+U[st]+'</p></div><form id="qf">'+body+'<div class="quiz-actions">'+btn('christmas',(st===5?(S.m.photos.length||S.m.audio||(S.m.video&&S.a.delivery!=='print')?'Continuar':'Continuar sem mídia'):'Continuar')+ic('arrow-right'),'type="submit" id="go"'+(ok()?'':' disabled'))+(st===3&&sa?btn('ghost','Pular e ver minha cartinha','type="button" data-act="skip"'):'')+'</div></form><p class="privacy-note">'+ic('lock-keyhole')+' Sem cadastro. Suas respostas ficam só neste navegador.</p></div></main>'}
+return header(true)+'<main class="quiz-page"><div class="quiz-wrap"><div class="quiz-top">'+(st===0?link(ic('arrow-left')+' Voltar ao início','btn v-ghost',''):btn('ghost',ic('arrow-left')+' Voltar','type="button" data-act="prev"'))+'<span>Etapa '+(st+1)+' de 7</span></div><div class="quiz-progress">'+[0,1,2,3,4,5,6].map(function(i){return '<span class="'+(i<=st?'complete':'')+'"></span>'}).join('')+'</div><div class="quiz-heading"><p class="eyebrow">'+ic('sparkles','size-3')+' '+(st===0?'Sua surpresa começa aqui':sa?'Uma cartinha do Papai Noel':'Uma cartinha com o seu carinho')+'</p><h1>'+H[st]+'</h1><p>'+U[st]+'</p></div><form id="qf">'+body+'<div class="quiz-actions">'+btn('christmas',(st===5?(voiceJob?'Finalize o áudio para continuar':photoBusy?'Preparando foto…':S.m.photos.length||S.m.audio||(S.m.video&&S.a.delivery!=='print')?'Continuar':'Continuar sem mídia'):'Continuar')+ic('arrow-right'),'type="submit" id="go"'+(ok()?'':' disabled'))+(st===3&&sa?btn('ghost','Pular e ver minha cartinha','type="button" data-act="skip"'):'')+'</div></form><p class="privacy-note">'+ic('lock-keyhole')+' Sem cadastro. Suas respostas ficam só neste navegador.</p></div></main>'}
 function initDeck(){var area=document.getElementById('deck');if(!area)return;var cards=C.moments,total=cards.length,cur=0,els=[],cnt=document.getElementById('deckc'),sx=null,sy=0,busy=false;
 var ST=['rotate(0deg) translateY(0px) scale(1)','rotate(2.5deg) translateY(8px) scale(0.97)','rotate(-2deg) translateY(14px) scale(0.94)','rotate(1.5deg) translateY(20px) scale(0.91)'],OP=[1,.85,.65,.4];
 for(var i=total-1;i>=0;i--){var el=document.createElement('div');el.className='deck-card';el.innerHTML='<img src="'+MOM[i]+'" alt="'+esc(cards[i].alt)+'" draggable="false"><div class="deck-body"><h4>'+esc(cards[i].title)+'</h4><p>'+esc(cards[i].text)+'</p></div>';area.appendChild(el);els.unshift(el)}
@@ -2620,15 +2633,140 @@ return '<div class="m-box"><h3>Deixe com a sua cara <span class="text-muted-fore
 function mediaView(m,rv){var o='';if(m.photos.length)o+='<div class="m-grid">'+m.photos.map(function(p,i){return '<img src="'+p+'" alt="Foto da cartinha '+(i+1)+'">'}).join('')+'</div>';
 if(m.audio)o+='<div class="m-play">'+(rv?btn('christmas',ic('play')+'Ouvir o recado','type="button" data-m="play"')+'<audio id="rau" src="'+m.audio+'" preload="none"></audio>':'<audio controls src="'+m.audio+'"></audio>')+'</div>';
 return o?'<div class="m-view">'+o+'</div>':''}
-function startRec(){var m=S.m;m.err='';if(!navigator.mediaDevices||!window.MediaRecorder){m.err='Seu navegador não permite gravar áudio aqui. Você pode continuar sem o áudio.';return keep()}
-navigator.mediaDevices.getUserMedia({audio:true}).then(function(st){CH=[];REC=new MediaRecorder(st);REC.ondataavailable=function(e){e.data.size&&CH.push(e.data)};REC.onstop=function(){st.getTracks().forEach(function(x){x.stop()});m.rec=false;m.adur=(Date.now()-(m.t0||Date.now()))/1e3;var r=new FileReader();r.onload=function(){m.audio=r.result;keep()};r.readAsDataURL(new Blob(CH,{type:REC.mimeType||'audio/webm'}))};REC.start();m.t0=Date.now();m.audio=null;m.rec=true;keep()}).catch(function(){m.rec=false;m.err='Não conseguimos usar o microfone (a permissão foi negada ou ele não está disponível). Você pode continuar sem o áudio, ou liberar o microfone nas configurações do navegador e tentar de novo.';keep()})}
+var voiceJob = null;
+var photoBusy = false;
+
+function stopVoice() {
+  if (!voiceJob || !voiceJob.recorder || voiceJob.recorder.state !== 'recording') return;
+  voiceJob.phase = 'saving';
+  voiceJob.recorder.stop();
+  keep();
+}
+
+function releaseVoice(job) {
+  clearInterval(job.timer);
+  if (job.stream) job.stream.getTracks().forEach(track => track.stop());
+}
+
+function cancelVoice(redraw) {
+  const job = voiceJob;
+  if (!job) return;
+  voiceJob = null;
+  if (job.recorder && job.recorder.state === 'recording') job.recorder.stop();
+  releaseVoice(job);
+  S.m.rec = false;
+  if (redraw) keep();
+}
+
+async function startRec() {
+  if (voiceJob) return;
+  const media = S.m;
+  media.err = '';
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+    media.err = 'Este navegador não consegue gravar. Abra a página no Chrome ou Safari, ou continue sem áudio.';
+    return keep();
+  }
+  const job = {phase:'permission', stream:null, recorder:null, timer:null};
+  voiceJob = job;
+  keep();
+  function fail(message) {
+    releaseVoice(job);
+    if (voiceJob !== job) return;
+    voiceJob = null;
+    media.rec = false;
+    media.err = message;
+    keep();
+  }
+  try {
+    job.stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    if (voiceJob !== job) return releaseVoice(job);
+    const recorder = job.recorder = new MediaRecorder(job.stream);
+    const chunks = [];
+    recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
+    recorder.onerror = () => fail('A gravação foi interrompida. Confira o microfone e tente de novo.');
+    recorder.onstop = async () => {
+      releaseVoice(job);
+      if (voiceJob !== job) return;
+      const duration = (Date.now() - job.started) / 1000;
+      const audio = new Blob(chunks, {type:recorder.mimeType || 'audio/webm'});
+      if (!audio.size) return fail('O microfone não registrou áudio. Toque em gravar para tentar novamente.');
+      if (audio.size > 15 * 1024 * 1024) return fail('O recado ficou grande demais. Grave uma mensagem mais curta.');
+      const reader = new FileReader();
+      reader.onerror = () => fail('Não foi possível guardar esse recado. Grave de novo.');
+      reader.onload = () => {
+        if (voiceJob !== job) return;
+        media.audio = reader.result;
+        media.adur = duration;
+        media.rec = false;
+        voiceJob = null;
+        keep();
+        document.querySelector('.mc-body audio')?.focus({preventScroll:true});
+      };
+      reader.readAsDataURL(audio);
+    };
+    recorder.start();
+    job.started = Date.now();
+    job.phase = 'recording';
+    media.rec = true;
+    keep();
+    document.querySelector('[data-m="stop"]')?.focus({preventScroll:true});
+    job.timer = setInterval(() => {
+      const clock = document.getElementById('voice-clock');
+      if (clock) clock.textContent = fmtT((Date.now()-job.started)/1000);
+    }, 500);
+  } catch (error) {
+    fail(error.name === 'NotAllowedError'
+      ? 'O microfone está bloqueado. Permita o acesso nas configurações do navegador e tente de novo, ou continue sem áudio.'
+      : 'Não conseguimos abrir o microfone. Confira se ele está disponível ou continue sem áudio.');
+  }
+}
+document.addEventListener('click', event => {
+  if (event.target.closest('[data-voice-cancel]')) cancelVoice(true);
+  if (event.target.closest('[data-act="prev"],[data-go]')) cancelVoice(false);
+});
+window.addEventListener('hashchange', () => { if (location.hash !== '#criar') cancelVoice(false); });
+window.addEventListener('pagehide', () => cancelVoice(false));
+window.addEventListener('pageshow', event => { if(event.persisted && S.step===5) keep(); });
+
+
 function finish(){var a=new Uint8Array(12);crypto.getRandomValues(a);var t=[].map.call(a,function(x){return ('0'+x.toString(16)).slice(-2)}).join('');SH[t]={k:S.kind,l:gen(),m:{photos:S.m.photos.slice(),audio:S.m.audio}};S.done=t;draw();top0()}
 function deliver(){var u=location.href.split('#')[0]+'#carta-'+S.done,msg='Preparei uma cartinha de Natal para você 🎄 Abra aqui: '+u;
 return header(true)+'<main class="quiz-page"><div class="quiz-wrap"><div class="quiz-heading preview-heading"><p class="eyebrow">'+ic('gift','size-3')+' Tudo pronto</p><h1>Sua cartinha está pronta para enviar</h1><p>Escolha quem vai receber no WhatsApp e confirme o envio por lá.</p></div><div class="m-link" id="lk">'+esc(u)+'</div><div class="preview-actions"><a class="btn v-christmas" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(msg)+'">'+ic('send')+'Compartilhar pelo WhatsApp</a>'+btn('outline',ic('copy')+'Copiar link','type="button" data-m="copy"')+btn('outline',ic('printer')+'Imprimir cartinha','type="button" data-m="print"')+'<a class="btn v-ghost" href="#carta-'+S.done+'">Ver como quem recebe</a></div><p class="field-hint" style="text-align:center">Na impressão vão a mensagem, a assinatura e as fotos. O áudio pode ser ouvido na cartinha aberta pelo link.</p><p class="privacy-note">'+ic('info')+' Demonstração: aqui o link só abre neste navegador. Para abrir em outro aparelho é preciso o servidor que guarda a cartinha.</p><div class="center-cta">'+create('Criar outra cartinha')+'</div></div></main>'}
 function recv(t){var c=SH[t];return header(true)+'<main class="quiz-page"><div class="quiz-wrap">'+(c?'<div class="quiz-heading preview-heading"><p class="eyebrow">'+ic('mail','size-3')+' Uma cartinha para você</p></div>'+paper(c.k,c.l.g,c.l.p,c.l.s,c.l.c,null,c.m):'<div class="quiz-heading"><h1>Esta cartinha não está disponível aqui</h1><p>Na demonstração, as cartinhas ficam só na memória do navegador de quem criou.</p></div><div class="center-cta">'+create('Criar minha cartinha')+'</div>')+'</div></main>'}
-document.addEventListener('change',function(e){if(e.target.id!=='phin')return;var fs=[].slice.call(e.target.files).slice(0,1),n=fs.length;if(!n)return;fs.forEach(function(f){var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){var k=Math.min(1,1000/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);S.m.photos=[c.toDataURL('image/jpeg',.85)];if(--n===0)keep()};im.onerror=function(){if(--n===0)keep()};im.src=r.result};r.readAsDataURL(f)})});
+document.addEventListener('change', async event => {
+  if (event.target.id !== 'phin') return;
+  const file = event.target.files[0];
+  if (!file || photoBusy) return;
+  const media = S.m;
+  media.photoError = '';
+  photoBusy = true;
+  keep();
+  let url;
+  try {
+    url = URL.createObjectURL(file);
+    const image = new Image();
+    image.src = url;
+    await image.decode();
+    const scale = Math.min(1, 1000 / Math.max(image.width, image.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(image.width * scale));
+    canvas.height = Math.max(1, Math.round(image.height * scale));
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#fff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    media.photos = [canvas.toDataURL('image/jpeg', .85)];
+  } catch {
+    media.photoError = 'Não conseguimos abrir essa foto. Escolha uma imagem JPG ou PNG, ou continue sem trocar a foto.';
+  } finally {
+    if (url) URL.revokeObjectURL(url);
+    photoBusy = false;
+    keep();
+  }
+});
+
 document.addEventListener('click',function(e){var t=e.target.closest('[data-m]');if(!t)return;var a=t.dataset.m,m=S.m;
-if(a==='rmph'){m.photos.splice(+t.dataset.i,1);keep()}else if(a==='rmau'){m.audio=null;keep()}else if(a==='rec')startRec();else if(a==='stop'){REC&&REC.stop()}
+if(a==='rmph'){m.photos.splice(+t.dataset.i,1);keep()}else if(a==='rmau'){m.audio=null;keep()}else if(a==='rec')startRec();else if(a==='stop'){stopVoice()}
 else if(a==='play'){var au=document.getElementById('rau');au&&(au.paused?au.play():au.pause())}else if(a==='fin')finish();else if(a==='print')printLetter();else if(a==='gd'){S.a.gender=S.a.gender===t.dataset.v?'':t.dataset.v;keep()}
 else if(a==='copy'){var u=document.getElementById('lk').textContent,ok2=function(){t.lastChild.textContent='Link copiado!'};try{navigator.clipboard.writeText(u).then(ok2,function(){})}catch(x){var r=document.createRange();r.selectNode(document.getElementById('lk'));getSelection().removeAllRanges();getSelection().addRange(r)}}});
 
@@ -2643,7 +2781,7 @@ var PRECO_CFG={centavos:1000,anterior:1990,moeda:'BRL',rotulo:'BLACK FRIDAY 🎄
 function brl(c){return 'R$ '+(c/100).toFixed(2).replace('.',',')}
 var PRECO_CENT=PRECO_CFG.centavos,PRECO=brl(PRECO_CENT),PRECO_DE=brl(PRECO_CFG.anterior);
 S.m.fill=false;S.m.zoom=1;S.m.px=50;S.m.py=50;S.a.delivery='';S.pay=false;S.tab='';
-function ok(){var s=S.step;if(s===4)return !!S.a.delivery;if(s>=5)return true;return ok0()}
+function ok(){var s=S.step;if(s===5&&(voiceJob||photoBusy))return false;if(s===4)return !!S.a.delivery;if(s>=5)return true;return ok0()}
 function dvBlock(){var d=S.a.delivery,o=[['wa','📲 Enviar pelo WhatsApp','Quem receber abre a cartinha no celular. Você pode colocar fotos e gravar um recado com a sua voz.'],['print','🖨️ Imprimir a cartinha','Monte sua cartinha em folha A4. Se quiser, coloque uma foto para entregar junto da mensagem.']];return '<div class="choice-list">'+o.map(function(x){return btn('letter','<span><strong>'+x[1]+'</strong><small>'+x[2]+'</small></span>'+(d===x[0]?ic('check','choice-check'):''),'type="button" aria-pressed="'+(d===x[0])+'" data-m="dv" data-v="'+x[0]+'"')}).join('')+'</div>'}
 function frameStyle(m){var z=m.zoom||1,x=m.px==null?50:m.px,y=m.py==null?50:m.py;return 'object-fit:'+(m.fill?'cover':'contain')+';object-position:'+x+'% '+y+'%;transform:scale('+(m.fill?z:1)+');transform-origin:'+x+'% '+y+'%'}
 function sheetHTML(c){var l=c.l,ps=l.p,z=ps.length-1,m=c.m,v=c.v||VCTX,vt=v&&TH[v.vt]?v.vt:'classico',ac=(v&&v.vc)||TH[vt].def,P=function(p){return '<p>'+esc(p)+'</p>'},
@@ -3072,10 +3210,15 @@ var recv0=recv;recv=function(t){var o=VCTX;VCTX=(SH[t]||{}).v||null;try{return r
 ['previewBody','mediaBlock','liveA4','prepCheck'].forEach(ctxWrap);
 var fin0=finish;finish=function(){fin0.apply(this,arguments);var c=SH[S.done];if(c){c.v=vxNow();c.fx=S.fx}};
 var sp0=startPrep;startPrep=function(){persistDraft();sp0.apply(this,arguments)};
-function vtMini(id,vc){return '<span class="vt-mini th-'+id+(id==='classico'&&!vc?' th-def':'')+'"'+(vc?' style="--la:'+vc+'"':'')+'><b></b><b></b><b></b></span>'}
+const CLASSIC_FRAME = {'#b3262d':'#2f5d3a','#1f6b45':'#b3262d','#b8860b':'#8e2a3a','#2f5f9e':'#8e2a3a'};
+function classicCompanion(ac){return CLASSIC_FRAME[ac]||CLASSIC_FRAME['#b3262d']}
+function vtMini(id,vc){
+ var colors=vc?' style="--la:'+vc+(id==='classico'?';--la2:'+classicCompanion(vc):'')+'"':'';
+ return '<span class="vt-mini th-'+id+'"'+colors+'><b></b><b></b><b></b></span>';
+}
 function vtList(){return '<h2 class="fx-sub" id="vt-l">Tema e cor de destaque</h2><div class="vt-list" role="group" aria-labelledby="vt-l">'+Object.keys(TH).map(function(id){var T=TH[id],on=S.vt===id;
- return '<div class="vt-card'+(on?' on':'')+'"><button type="button" class="vt-main" aria-pressed="'+on+'" data-vt="'+id+'">'+vtMini(id,on?S.vc:'')+'<span>'+T.n+'</span></button><div class="vc-row" role="group" aria-label="Cor de destaque: '+T.n+'">'
- +T.sw.map(function(s){return '<button type="button" class="vc-s" aria-pressed="'+(on&&(S.vc||'')===s[1])+'" aria-label="'+s[0]+'" title="'+s[0]+'" data-vt="'+id+'" data-vc="'+s[1]+'" style="--sc:'+(s[1]||T.def)+'"></button>'}).join('')+'</div></div>'}).join('')+'</div>'}
+ return '<div class="vt-card'+(on?' on':'')+'"><button type="button" class="vt-main" aria-pressed="'+on+'" data-vt="'+id+'">'+vtMini(id,on?S.vc:'')+'<span>'+T.n+(on?'<small class="vt-selected-color" style="display:block">'+T.sw.find(function(color){return color[1]===(S.vc||'')})?.[0]+'</small>':'')+'</span></button><div class="vc-row" role="group" aria-label="Cor de destaque: '+T.n+'">'
+ +T.sw.map(function(s){return '<button type="button" class="vc-s" aria-pressed="'+(on&&(S.vc||'')===s[1])+'" aria-label="'+s[0]+'" title="'+s[0]+'" data-color-theme="'+id+'" data-vc="'+s[1]+'" style="--sc:'+(s[1]||T.def)+'"></button>'}).join('')+'</div></div>'}).join('')+'</div>'}
 function fxOpts(){var cur=S.fx||'nenhum',d=S.a.delivery||'wa',t=cur==='nenhum'?'Sem enfeites: só a cartinha, limpa.':d==='wa'?'No celular, o efeito aparece animado quando a pessoa abre a cartinha.':d==='print'?'Na impressão, o efeito vira uma decoração fixa na folha A4.':'No celular, o efeito aparece animado. Na impressão, vira uma decoração fixa na folha A4.';
  return '<h2 class="fx-sub" id="fx-l">Efeito da cartinha</h2><div class="fx-opts" role="radiogroup" aria-labelledby="fx-l">'+Object.keys(FX).map(function(id){return '<button type="button" class="fx-o" role="radio" aria-checked="'+(cur===id)+'" data-fx="'+id+'"><span class="fxo-demo fx-'+id+'" aria-hidden="true">'+fxLayer(id,1)+'</span><span>'+FX[id]+'</span></button>'}).join('')+'</div><p class="field-hint fx-info" role="status">'+t+'</p>'}
 function vlLive(){var d=S.a.delivery||'wa',tab=S.tab||(d==='print'?'pap':'cel'),l=gen(),k=S.kind;
@@ -3091,10 +3234,10 @@ var quiz0V=quiz0;quiz0=function(){if(S.kind&&S.vedit&&S.preview&&!S.prep&&!S.off
 function vSummary(){return ''}
 var pv0=previewBody;previewBody=function(k,l){return pv0(k,l)+vSummary()};
 document.addEventListener('click',function(e){if(e.target.closest('[data-go],[data-act]'))S.vedit=false},true);
-document.addEventListener('click',function(e){var t=e.target.closest('[data-vt],[data-fx],[data-vedit]');if(!t)return;var d=t.dataset;
+document.addEventListener('click',function(e){var t=e.target.closest('[data-color-theme],[data-vt],[data-fx],[data-vedit]');if(!t)return;var d=t.dataset;
  if(d.vedit){if(d.vedit==='open'){S.vbak=vxNow();S.vedit=true}else{if(d.vedit==='cancel'&&S.vbak){S.fx=S.vbak.fx;S.vt=S.vbak.vt;S.vc=S.vbak.vc}else persistDraft();S.vedit=false}draw();top0();return}
- if(d.vt!==undefined){if(S.vt===d.vt&&(d.vc===undefined||(S.vc||'')===d.vc))return;S.vt=d.vt;S.vc=d.vc||''}else if(FX[d.fx]&&S.fx!==d.fx)S.fx=d.fx;else return;
- persistDraft();keep();var q=d.vt!==undefined?'[data-vt="'+d.vt+'"]'+(d.vc!==undefined?'[data-vc="'+d.vc+'"]':'.vt-main'):'[data-fx="'+d.fx+'"]',b=document.querySelector(q);b&&b.focus({preventScroll:true})});
+ if(d.colorTheme!==undefined){S.vt=d.colorTheme;S.vc=d.vc}else if(d.vt!==undefined){if(S.vt===d.vt&&(d.vc===undefined||(S.vc||'')===d.vc))return;S.vt=d.vt;S.vc=d.vc||''}else if(FX[d.fx]&&S.fx!==d.fx)S.fx=d.fx;else return;
+ persistDraft();keep();var q=d.colorTheme!==undefined?'[data-color-theme="'+d.colorTheme+'"][data-vc="'+d.vc+'"]':d.vt!==undefined?'[data-vt="'+d.vt+'"]'+(d.vc!==undefined?'[data-vc="'+d.vc+'"]':'.vt-main'):'[data-fx="'+d.fx+'"]',b=document.querySelector(q);b&&b.focus({preventScroll:true})});
 /* impressão com efeito: folha sem margem do navegador, enfeites fixos na folha inteira e faixa livre de 24 mm em cima e embaixo
    (cabeçalho e rodapé de tabela se repetem em cada página), para o texto nunca encostar nos enfeites */
 var print0=printLetter;printLetter=function(){var c=SH[S.done],fx=c&&c.v&&fxOn(c.v.fx);var st=null;
@@ -3215,9 +3358,11 @@ function entregaPage(o){var d=o.d,wa=d!=='print',pr=d!=='wa',u=linkDe(o),est=pub
  if(wa){var nota=est==='local'?'<p class="dv-note" role="status">Prévia disponível neste navegador</p>'
    :est==='preparando'?'<p class="dv-note" role="status"><span class="pay-spin" aria-hidden="true"></span>Estamos preparando o link da sua cartinha</p>'
    :est==='falhou'?'<div class="dv-note err" role="alert"><p>Não conseguimos preparar o link agora. Você não precisa refazer a cartinha nem pagar de novo.</p>'+btn('outline',ic('refresh-cw')+'Tentar novamente','type="button" data-m="pubretry" data-id="'+esc(o.id)+'"')+'</div>':'';
+  var podeCopiar=ok||est==='local';
   h+='<section class="dv-sec" aria-label="Entrega digital">'
+   +(podeCopiar?'<p class="dv-note"><strong>Guarde o link da cartinha.</strong> Toque em “Copiar link” e salve nas suas notas ou em uma conversa com você no WhatsApp.'+(est==='local'?' Nesta demo, o link só abre neste navegador.':'')+'</p>':'')
    +(ok?'<a class="btn v-christmas create-button" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(msg)+'">'+ic('send')+'Enviar pelo WhatsApp</a>':btn('christmas',ic('send')+'Enviar pelo WhatsApp','type="button" disabled'))
-   +'<div class="dv-row">'+btn('outline',ic('copy')+'Copiar link','type="button" data-m="copy2" data-u="'+esc(u)+'"'+(ok?'':' disabled'))+'<a class="btn v-outline" href="#carta-'+o.token+'" data-vm="1">'+ic('eye')+(est==='local'?'Ver prévia':'Ver cartinha')+'</a></div>'+nota
+   +'<div class="dv-row">'+btn('outline',ic('copy')+'Copiar link','type="button" data-m="copy2" data-u="'+esc(u)+'"'+(podeCopiar?'':' disabled'))+'<a class="btn v-outline" href="#carta-'+o.token+'" data-vm="1">'+ic('eye')+(est==='local'?'Ver prévia':'Ver cartinha')+'</a></div>'+nota
    +(ok?'<details class="dv-qr"><summary>Mostrar QR Code</summary><div class="dv-qrw"><p class="field-hint">A pessoa aponta a câmera do celular para o QR Code e abre a cartinha.</p><div id="qrbox" class="dv-qrbox"></div>'+btn('outline',ic('download')+'Baixar QR Code','type="button" data-m="qrdl"')+'</div></details>':'<div class="dv-qr off" aria-disabled="true">Mostrar QR Code</div>')+'</section>'}
  if(wa&&pr)h+='<section class="dv-print" aria-label="Impressão"><h2>Para entregar impresso</h2><div class="dv-row">'+btn('outline',ic('printer')+'Imprimir cartinha','type="button" data-m="print"')+a4+'</div>'+pdf+'</section>';
  else if(pr)h+='<section class="dv-sec" aria-label="Impressão">'+btn('christmas',ic('printer')+'Imprimir cartinha','type="button" data-m="print"')+a4+pdf+'</section>';
@@ -3441,7 +3586,9 @@ function ringSVG(x,y,w,h,bw,r,c1,c2,per,paper){var id='cn-r'+(++RID),ir=Math.max
  for(t=-L/2;t<L/2;t+=per){o+='<rect x="'+f1(cx+t)+'" y="'+f1(cy-L/2)+'" width="'+f1(sw)+'" height="'+f1(L)+'" fill="'+c1+'"/><rect x="'+f1(cx+t+per/2)+'" y="'+f1(cy-L/2)+'" width="'+f1(sw)+'" height="'+f1(L)+'" fill="'+c2+'"/>'}
  return '<clipPath id="'+id+'"><path clip-rule="evenodd" d="'+d+'"/></clipPath><g clip-path="url(#'+id+')"><rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+(paper||'#fffdf8')+'"/><g transform="rotate(45 '+f1(cx)+' '+f1(cy)+')">'+o+'</g></g><path fill-rule="evenodd" d="'+d+'" fill="none" stroke="'+c1+'" stroke-width=".22"/>'}
 function hueOf(h){var n=parseInt(h.slice(1),16),r=n>>16,g=n>>8&255,b=n&255,m=Math.max(r,g,b),k=m-Math.min(r,g,b);if(!k)return 0;var x=m===r?((g-b)/k+6)%6:m===g?(b-r)/k+2:(r-g)/k+4;return x*60}
-function a4Cols(vt,ac){var h=hueOf(/^#[0-9a-f]{6}$/i.test(ac)?ac:'#b3262d'),red=h<20||h>335,grn=h>80&&h<170,s2;
+function a4Cols(vt,ac){
+ if(vt==='classico')return [ac,classicCompanion(ac)];
+ var h=hueOf(/^#[0-9a-f]{6}$/i.test(ac)?ac:'#b3262d'),red=h<20||h>335,grn=h>80&&h<170,s2;
  if(vt==='polo')s2=red?'#2f6fa8':'#c0392b';else if(vt==='carinho')s2='#d4a537';else if(vt==='noite')s2='#2b3f7e';else s2=grn?'#b3262d':'#2f5d3a';
  return [ac,s2]}
 function pineSVG(c){var T='#2f5d3a';return '<path d="M0-8.2L5.2-1.2H2.6L7.2 5H-7.2L-2.6-1.2H-5.2Z" fill="'+T+'"/><path d="M-3.2 5H3.2V8H-3.2Z" fill="#6b4e2e"/>'+star4(0,-9.4,2.1)+'<circle cx="-2.4" cy="1.4" r=".75" fill="'+c+'"/><circle cx="2.6" cy="-.2" r=".75" fill="#d4a537"/><circle cx="-.4" cy="3.6" r=".75" fill="#d4a537"/><circle cx="3.4" cy="3.6" r=".75" fill="'+c+'"/>'}
@@ -3469,13 +3616,22 @@ function sigSeal(k,vt,ac){var sa=k==='santa';
  +(sa?star5(0,-1.7,3.4,1.45,G)+'<text y="4.4" font-family="Georgia,serif" font-size="1.9" font-weight="700" text-anchor="middle" fill="'+ac+'" letter-spacing=".3">NATAL</text>':'<g transform="scale(.82)">'+symSVG(vt,ac)+'</g>')+'</svg>'}
 function pageSVG(vt,ac,fx,k){var cl=a4Cols(vt,ac),sa=k==='santa',h='<svg class="mf-pg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 210 297" preserveAspectRatio="none" aria-hidden="true"><rect width="210" height="297" fill="#fffdf8"/>';
  if(WMI[fx]){var op=(fx==='estrelas'||fx==='luzes')?.14:.075;WMS.forEach(function(q){var sz=q[2],cx=q[0]+sz/2,cy=q[1]+sz/2;h+='<g opacity="'+op+'" style="color:'+ac+'" transform="translate('+f1(cx)+' '+f1(cy)+') rotate('+q[3]+') scale('+f2(sz/20)+')">'+WMI[fx]()+'</g>'})}
- h+=ringSVG(6,6,198,285,5.5,3.4,cl[0],cl[1],9);
+ if(vt==='classico'||vt==='polo'){
+   h+=ringSVG(6,6,198,285,vt==='polo'?3.8:5.5,3.4,cl[0],cl[1],9);
+   if(vt==='polo')[[15,17],[195,17],[15,280],[195,280]].forEach(function(q){h+='<g style="color:'+ac+'">'+snow(q[0],q[1],2.6,.32)+'</g>'});
+ }else{
+   var ink=vt==='noite'?'#31476a':ac;
+   h+='<rect x="7" y="7" width="196" height="283" rx="4" fill="none" stroke="'+ink+'" stroke-width="1"/><rect x="9.5" y="9.5" width="191" height="278" rx="3" fill="none" stroke="'+cl[1]+'" stroke-width=".4"/>';
+   [[15,17],[195,17],[15,280],[195,280]].forEach(function(q){
+     h+=vt==='noite'?star5(q[0],q[1],2.6,1.1,ac):'<g transform="translate('+q[0]+' '+q[1]+') scale(.42)">'+symSVG(vt,ac)+'</g>';
+   });
+ }
  h+='<rect x="15" y="15" width="180" height="267" rx="1.6" fill="none" stroke="'+ac+'" stroke-width=".3"/>';
  if(sa)h+=topRules(31,ac,19.5)+'<g transform="translate(105 31) scale(1.15)">'+stampSVG(ac)+'</g>';
  else h+=topRules(27,ac,14)+'<g transform="translate(105 27)" style="color:'+ac+'"><circle r="8.6" fill="#fffdf8" stroke="'+ac+'" stroke-width=".3"/><circle r="7.5" fill="none" stroke="'+G+'" stroke-width=".2" stroke-dasharray=".6 .8"/><g transform="scale(1.05)">'+symSVG(vt,ac)+'</g></g>';
  return h+'</svg>'}
 function frameHTML(vt,ac,fx,k){return pageSVG(vt,ac,fx,k)}
-window.CartinhasPhotoFrame=function(vt,ac,k,w,h){var cl=a4Cols(vt,ac),ln=vt==='classico'?(cl[1]==='#2f5d3a'?cl[1]:ac):ac,I=3.4,
+window.CartinhasPhotoFrame=function(vt,ac,k,w,h){var cl=a4Cols(vt,ac),ln=vt==='classico'?(cl[1]==='#2f5d3a'?cl[1]:ac===TH.classico.sw[1][1]?ac:cl[1]):ac,I=3.4,
  band=rrPath(.9,.9,w-1.8,h-1.8,1)+rrPath(I-1.2,I-1.2,w-2*I+2.4,h-2*I+2.4,.4),
  spr=(vt==='polo'?SPR_S:SPR_H).replace('<svg viewBox="0 0 24 24">','<svg x="0" y="0" width="9.5" height="9.5" viewBox="0 0 24 24" overflow="visible">');
  return '<svg class="ps-fsvg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" aria-hidden="true"><rect x=".25" y=".25" width="'+(w-.5)+'" height="'+(h-.5)+'" rx="1.2" fill="none" stroke="'+ln+'" stroke-width=".45"/>'
@@ -3558,28 +3714,26 @@ function file(id,acc,cls,inner){return '<label class="'+cls+'"><input type="file
 function ico(n){return '<span class="mc-ic">'+ic(n)+'</span>'}
 function head(n,t){return '<div class="mc-head">'+ico(n)+'<span class="mc-t">'+t+'</span></div>'}
 function act(inner,attrs){return '<button type="button" class="mc-btn" '+attrs+'>'+inner+'</button>'}
-function mcPhoto(m,d){var h=m.photos[0];
+function mcPhoto(m,d){var h=m.photos[0];if(photoBusy)return '<p class="mc-note" role="status">Preparando a foto…</p>';
  if(!h)return '<div class="mc-item">'+file('phin','image/*','mc-line',ico('image')+'<span class="mc-t">Adicionar foto</span>')+'</div>';
  return '<div class="mc-item has">'+head('image','Foto adicionada')+'<div class="mc-body"><img class="mc-img" src="'+h+'" alt="Foto escolhida"><div class="mc-acts">'+file('phin','image/*','mc-btn',ic('image')+'Trocar foto')+act(ic('trash-2')+'Remover','data-m="rmph" data-i="0"')+'</div></div></div>'}
-function mcAudio(m){
- if(m.rec)return '<div class="mc-item mc-rec"><button type="button" class="mc-line" data-m="stop">'+ico('mic')+'<span class="mc-t">Parar gravação<small>Gravando… fale com calma.</small></span></button></div>';
- if(!m.audio)return '<div class="mc-item"><button type="button" class="mc-line" data-m="rec">'+ico('mic')+'<span class="mc-t">Gravar recado de voz</span></button></div>';
- return '<div class="mc-item has">'+head('mic','Recado de voz'+(m.adur?' · '+fmtT(m.adur):''))+'<div class="mc-body"><audio controls src="'+m.audio+'"></audio><div class="mc-acts">'+act(ic('mic')+'Regravar','data-m="rec"')+act(ic('trash-2')+'Remover','data-m="rmau"')+'</div></div></div>'}
-function mcVideo(m){var v=m.video;
- if(v)return '<div class="mc-item has">'+head('video','Vídeo adicionado')+'<div class="mc-body"><video controls playsinline preload="metadata" src="'+v.url+'" aria-label="Seu vídeo"></video><p class="mc-info">'+esc(v.name)+' · '+vdInfo(v)+'</p><div class="mc-acts">'+file('vdin',VACC,'mc-btn',ic('video')+'Trocar vídeo')+act(ic('trash-2')+'Remover','data-vd="rm"')+'</div></div></div>';
- var op=!!(m.vopen||m.verr);
- return '<div class="mc-item"><button type="button" class="mc-line" data-mc="vtog" aria-expanded="'+op+'">'+ico('video')+'<span class="mc-t">Adicionar vídeo</span><span class="mc-chev">'+ic('chevron-right')+'</span></button>'
-  +(op?'<div class="mc-panel"><p>MP4, MOV ou WebM, até '+VMAX+' MB e '+VSEC+' segundos.</p>'+file('vdin',VACC,'mc-btn pri',ic('video')+'Escolher vídeo')+(m.verr?'<p class="m-err" role="alert">'+esc(m.verr)+'</p>':'')+'</div>':'')+'</div>'}
+function mcAudio(m) {
+  if (voiceJob?.phase === 'permission') return '<div class="mc-item"><div class="mc-state" role="status">Permita o uso do microfone no aviso do navegador.</div><button type="button" class="mc-btn" data-voice-cancel>Cancelar gravação</button></div>';
+  if (voiceJob?.phase === 'saving') return '<div class="mc-item mc-state" role="status">Preparando seu recado…</div>';
+  if (voiceJob) return '<div class="mc-item mc-rec"><button type="button" class="mc-line" data-m="stop">'+ico('mic')+'<span class="mc-t">Parar e guardar o áudio <time id="voice-clock">'+fmtT((Date.now()-voiceJob.started)/1000)+'</time><small>Toque aqui quando terminar de falar.</small></span></button></div>';
+  if (!m.audio) return '<div class="mc-item"><button type="button" class="mc-line" data-m="rec">'+ico('mic')+'<span class="mc-t">Gravar recado de voz<small>Toque para começar e depois para parar.</small></span></button></div>';
+  return '<div class="mc-item has">'+head('check','Recado gravado · '+fmtT(m.adur||0))+'<div class="mc-body"><p>Ouça antes de continuar.</p><audio controls preload="metadata" aria-label="Ouvir sua gravação" src="'+m.audio+'"></audio><div class="mc-acts">'+act(ic('mic')+'Gravar de novo','data-m="rec"')+act(ic('trash-2')+'Remover áudio','data-m="rmau"')+'</div></div></div>';
+}
+
+
 function frameCtl(m){return '<div class="m-frame"><label><input type="checkbox" data-r="fill"'+(m.fill?' checked':'')+'> Preencher a moldura (pode cortar as bordas da foto)</label>'+[['zoom','Aproximar',1,2.5,.05],['px','Mover para os lados',0,100,1],['py','Mover para cima ou para baixo',0,100,1]].map(function(r){return '<label class="m-rg"><span>'+r[1]+'</span><input type="range" data-r="'+r[0]+'" min="'+r[2]+'" max="'+r[3]+'" step="'+r[4]+'" value="'+m[r[0]]+'"'+(m.fill?'':' disabled')+'></label>'}).join('')+'<p class="field-hint">Sem preencher, a foto aparece inteira. O ajuste vale só para a versão em papel.</p></div>'}
 mediaBlock=function(){var o=VCTX;VCTX=vxNow();try{
  var m=S.m,d=S.a.delivery||'wa',wa=d!=='print',pr=d!=='wa';
- var h='<div class="mc">'+mcPhoto(m,d)+(wa?mcAudio(m)+mcVideo(m):'')+(d==='both'?'<p class="mc-note">O recado de voz e o vídeo aparecem na versão digital.</p>':'')+(m.err?'<p class="mc-err" role="alert">'+esc(m.err)+'</p>':'')+'</div>';
+ var h='<div class="mc">'+mcPhoto(m,d)+(m.photoError?'<p class="mc-err" role="alert">'+esc(m.photoError)+'</p>':'')+(wa?mcAudio(m):'')+(d==='both'?'<p class="mc-note">O recado de voz aparece na versão digital.</p>':'')+(m.err?'<p class="mc-err" role="alert">'+esc(m.err)+'</p>':'')+'</div>';
  if(pr)h+='<div class="mc-extra">'+(m.photos[0]?frameCtl(m):'')+'<p class="field-hint">Prévia da folha A4</p><div class="a4prev" id="a4live">'+sheetHTML({k:S.kind,l:gen(),m:m})+'</div></div>';
  return h}finally{VCTX=o}};
-document.addEventListener('click',function(e){var t=e.target.closest('[data-mc=vtog],[data-vd=rm]');if(!t)return;
- if(t.dataset.mc==='vtog'){S.m.vopen=!S.m.vopen;S.m.verr='';keep()}else S.m.vopen=false},true);
 var q27=quiz0;quiz0=function(){var h=q27.apply(this,arguments);
- if(S.kind&&!S.preview&&S.step===5){var d=S.a.delivery||'wa',sub=d==='print'?'Se quiser, adicione uma foto à sua cartinha.':'Adicione uma foto, um vídeo ou um recado com a sua voz. Tudo é opcional.';
+ if(S.kind&&!S.preview&&S.step===5){var d=S.a.delivery||'wa',sub=d==='print'?'Se quiser, adicione uma foto à sua cartinha.':'Adicione uma foto ou um recado com a sua voz. Tudo é opcional.';
   h=h.replace(/(<div class="quiz-heading">[\s\S]*?<h1>)[^<]*(<\/h1><p>)[^<]*(<\/p>)/,function(x,a,b,c){return a+'Quer deixar a cartinha mais pessoal?'+b+sub+c})}
  return h};
 })();
@@ -3652,7 +3806,7 @@ var fin3=finish;finish=function(){var td=S.srvTd,a=td&&SRVLINK[td];fin3.apply(th
  var o=S.ped&&PED[S.ped];if(a&&o&&o.token===td){o.linkComprador=a.linkComprador;o.tc=a.tc;o.srvId=a.id;dbPut(o)}};
 /* entrega: link privado do comprador */
 var ep1=entregaPage;entregaPage=function(o){var h=ep1(o),A=SRVLINK[o.token]||(o.linkComprador?{linkComprador:o.linkComprador}:null);
- if(A&&A.linkComprador)h=h.replace('<p class="dv-again">','<section class="dv-sec dv-acesso" aria-label="Link de acesso"><p class="dv-acc-t">Guarde este link para acessar sua cartinha de novo</p><p class="field-hint">Só quem tem este link volta a esta tela. Ele abre em qualquer aparelho.</p>'+btn('outline',ic('copy')+'Copiar meu link de acesso','type="button" data-m="copy2" data-u="'+esc(A.linkComprador)+'"')+'</section><p class="dv-again">');return h};
+ if(A&&A.linkComprador)h=h.replace('<p class="dv-again">','<section class="dv-sec dv-acesso" aria-label="Link de acesso"><p class="dv-acc-t">Guarde seu link de acesso</p><p class="field-hint">Copie e guarde este link para voltar à tela de entrega. Para presentear alguém, envie o link da cartinha.</p>'+btn('outline',ic('copy')+'Copiar meu link de acesso','type="button" data-m="copy2" data-u="'+esc(A.linkComprador)+'"')+'</section><p class="dv-again">');return h};
 (function(){var st=document.createElement('style');st.id='acesso';st.textContent='.dv-acesso{margin-top:18px;padding:16px;border:1px solid rgba(0,0,0,.12);border-radius:16px;background:#fffdf8;text-align:center}.dv-acc-t{font-weight:700;margin:0 0 6px;line-height:1.3}.dv-acesso .field-hint{margin:0 0 12px}';document.head.appendChild(st)})();
 /* abrir os links em outro aparelho: busca no servidor */
 function srvOkUrl(u){return /^\/api\/midia\/[A-Za-z0-9_-]+\/(foto-[0-4]|audio|video)$/.test(u||'')}
@@ -3683,6 +3837,124 @@ var drawS=draw;draw=function(){var m=location.hash.match(/^#(carta|acesso)-([A-Z
  if(S.pay&&S.srv&&S.srv.id&&!S.done&&!SRVPOLL)SRVPOLL=setInterval(srvPoll,4000)};
 document.addEventListener('click',function(e){if(e.target.closest('[data-m=accretry]'))draw()});
 var rv9=recv;recv=function(t){return rv9(t).replace('Na demonstração, as cartinhas ficam só na memória do navegador de quem criou.','Confira o link com quem enviou. Se a cartinha foi criada há pouco, o pagamento pode ainda estar sendo confirmado.')};
+
+
+(function () {
+  let config, sdkPromise, savedForm = {}, currentAttempt, cache, busy = false;
+  const fingerprint = crypto.randomUUID();
+  const cardFields = [
+    ['holderName','Nome no cartão','cc-name'],
+    ['cardNumber','Número do cartão','cc-number'],
+    ['expMonth','Mês de validade','cc-exp-month'],
+    ['expYear','Ano de validade','cc-exp-year'],
+    ['cvv','Código de segurança','cc-csc']
+  ];
+  const customerFields = [['name','Nome completo','name'],['email','E-mail','email'],['phone','Celular com DDD','tel'],['cpf','CPF','off']];
+
+  function sdk() {
+    if (!sdkPromise) sdkPromise = (async () => {
+      if (!window.Cakto?.CaktoSDK) await new Promise((resolve,reject) => {
+        const script=document.createElement('script');
+        script.src='https://cakto-sdk.pages.dev/cakto-sdk.min.js';
+        script.onload=resolve;script.onerror=reject; document.head.appendChild(script);
+      });
+      const instance=new window.Cakto.CaktoSDK({client_id:config.clientId});
+      await instance.initAntifraud();
+      return instance;
+    })().catch(error=>{sdkPromise=null;throw error});
+    return sdkPromise;
+  }
+
+  function statusPanel() {
+    const order = cache?.result;
+    if (!order) return '';
+    if (['refused','declined','canceled','expired'].includes(order.status)) return '<p class="pay-state err" role="alert">A cobrança não foi aprovada.</p>';
+    return (order.pix?.code ? '<div id="cakto-qr" class="pay-qr"></div><div class="m-link pay-code" id="pix-code">'+esc(order.pix.code)+'</div>'+btn('outline',ic('copy')+'Copiar código Pix','type="button" data-m="pixcopy"')+
+      (order.pix.expiration?'<p class="field-hint">Válido até '+esc(new Date(order.pix.expiration).toLocaleString('pt-BR'))+'</p>':'') : '')+
+      '<p class="pay-state" role="status">Aguardando confirmação do pagamento…</p>';
+  }
+
+  function render(method) {
+    if (!config?.active || !S.srv?.id || TESTE.ativo()) return null;
+    const marker = S.srv.id;
+    if (cache?.id !== marker) {cache={id:marker};savedForm={};currentAttempt=null}
+    if (cache.result) return statusPanel();
+    const field = ([key,label,auto], isCard) => '<div class="field-group"><label for="cakto-'+key+'">'+label+'</label><input id="cakto-'+key+'" name="'+key+'" type="'+(key==='email'?'email':key==='cvv'?'password':'text')+'" autocomplete="'+auto+'" '+(['phone','cpf','cardNumber','expMonth','expYear','cvv'].includes(key)?'inputmode="numeric" ':'')+'required maxlength="'+(key==='email'?200:key==='name'||key==='holderName'?120:24)+'"'+(isCard?'':' value="'+esc(savedForm[key]||'')+'"')+'></div>';
+    return '<form id="cakto-form" data-method="'+method+'">'+customerFields.map(item=>field(item,false)).join('')+
+      (method==='credit_card'?cardFields.map(item=>field(item,true)).join(''):'')+
+      '<p id="cakto-error" class="pay-state err" role="alert"></p>'+
+      btn('christmas',method==='pix'?'Gerar Pix':'Pagar '+PRECO,'type="submit"'+(busy?' disabled':''))+'</form>';
+  }
+
+  const oldPix=pixPanel,oldCard=cardPanel;
+  pixPanel=()=>render('pix')??oldPix();
+  cardPanel=()=>render('credit_card')??oldCard();
+  const oldAfter=payAfter;
+  payAfter=function () {
+    oldAfter();
+    if (S.pay && !TESTE.ativo() && config===undefined && S.srv?.id) {
+      config=null;
+      srvApi('GET','/api/cakto/config').then(result=>{
+        config=result;
+        if (S.pay && config.active) {sdk().catch(()=>{});keep()}
+      },()=>{config={active:false}});
+    }
+    const qr=document.getElementById('cakto-qr');
+    if (qr && cache?.result?.pix?.code) {
+      try {const canvas=qrCanvas(cache.result.pix.code);if(canvas)qr.appendChild(canvas)}catch(ignore){}
+    }
+  };
+
+  document.addEventListener('input',e=>{
+    const field=e.target;
+    if (field.form?.id==='cakto-form' && customerFields.some(entry=>entry[0]===field.name)) savedForm[field.name]=field.value;
+  });
+
+  document.addEventListener('submit',async e=>{
+    const form=e.target;
+    if (form.id!=='cakto-form') return;
+    e.preventDefault();
+    if (busy || !S.srv || !config?.active || TESTE.ativo()) return;
+    const order=S.srv, state=cache;
+    const digits=value=>String(value||'').replace(/\D/g,'');
+    const values=new FormData(form);
+    const method=form.dataset.method;
+    let phone=digits(values.get('phone'));
+    if (phone.length===10||phone.length===11) phone='55'+phone;
+    const customer={name:String(values.get('name')).trim(),email:String(values.get('email')).trim(),phone,cpf:digits(values.get('cpf')),fingerprint};
+    if (!/^55\d{10,11}$/.test(phone)||customer.cpf.length!==11) {
+      form.querySelector('#cakto-error').textContent='Confira o celular com DDD e o CPF.';return;
+    }
+    busy=true;
+    form.querySelector('[type=submit]').disabled=true;
+    let failure='';
+    try {
+      if (currentAttempt && (currentAttempt.method!==method || JSON.stringify(currentAttempt.customer)!==JSON.stringify(customer))) throw Error('Use os mesmos dados para consultar a tentativa já iniciada.');
+      if (!currentAttempt) {
+        const payload={method,customer,attempt:crypto.randomUUID()};
+        if (method==='credit_card') {
+          const instance=await sdk();
+          await instance.completeAntifraudProfile();
+          payload.profiling=await instance.getAntifraudReference();
+          const card={holderName:values.get('holderName'),cardNumber:digits(values.get('cardNumber')),expMonth:digits(values.get('expMonth')),expYear:digits(values.get('expYear')),cvv:digits(values.get('cvv'))};
+          const {cardToken}=await instance.createToken(card);
+          payload.cardToken=cardToken;
+        }
+        currentAttempt=payload;
+      }
+      state.result=await srvApi('POST','/api/cakto/cobrancas/'+order.id,currentAttempt,{'x-token-comprador':order.tc});
+      currentAttempt=null;
+    }catch(error){failure=error.status===409||error.status===400 ? error.message : 'Não conseguimos confirmar esta tentativa. Confira o painel da Cakto antes de tentar de novo.'}
+    finally {
+      busy=false;
+      if(S.srv?.id===order.id && S.pay) {
+        if (state.result) keep();
+        else { const active=document.getElementById('cakto-form');if(active){active.querySelector('[type=submit]').disabled=false;active.querySelector('#cakto-error').textContent=failure} }
+      }
+    }
+  });
+})();
+
 
 bootDraw();
 /* carrossel "Muito mais do que uma cartinha": a altura se ajusta ao cartão mais alto, para o texto não ser cortado */
