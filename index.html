@@ -3164,7 +3164,8 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-mb=v
 /* === v19: modo de teste de pagamento + tela de entrega ===
    Modo de teste: só liga com config.js em ambiente 'teste' E host permitido (ver README). Padrão: produção (desligado). */
 var CFG=window.CARTINHAS_CONFIG||{};
-var TESTE={ativo:function(){var L=CFG.hostsPermitidos||[],h=location.protocol==='file:'?'file':location.hostname;return CFG.ambiente==='teste'&&(L.indexOf('*')>=0||L.indexOf(h)>=0)}};
+var testePorLink=new URLSearchParams(location.search).get('teste-pagamento')==='1';
+var TESTE={ativo:function(){return testePorLink||this.local()},local:function(){var L=CFG.hostsPermitidos||[],h=location.protocol==='file:'?'file':location.hostname;return CFG.ambiente==='teste'&&(L.indexOf('*')>=0||L.indexOf(h)>=0)}};
 /* PONTO DE INTEGRAÇÃO: com servidor, defina CartinhasEntrega.publicarCarta({id,carta,teste}) -> Promise<{url:'https://...'}> (guarda a carta e a mídia e devolve o link público) */
 window.CartinhasEntrega={publicarCarta:null};
 /* pedidos: IndexedDB separado para teste e produção */
@@ -3191,7 +3192,7 @@ var payP0=payPage;payPage=function(){var h=payP0(),s=S.cob.status,n='';
  if(n)h=h.replace('</section>','</section>'+n);
  if(TESTE.ativo())h=h.replace('</div></main>','<section class="test-box" aria-labelledby="tb-h"><p class="test-tag" id="tb-h">Modo de teste</p><p class="field-hint">Só aparece neste ambiente de teste. Nenhuma cobrança é feita e o pedido fica separado dos reais.</p>'+btn('outline',ic('flask-conical')+(S.simBusy?'Aprovando pagamento de teste…':'Simular pagamento aprovado'),'type="button" data-m="simpay"'+(S.simBusy?' disabled':''))+'</section></div></main>');
  return h};
-document.addEventListener('click',function(e){var t=e.target.closest('[data-m=simpay]');if(!t||!TESTE.ativo()||S.simBusy)return;S.simBusy=true;keep();
+document.addEventListener('click',function(e){var t=e.target.closest('[data-m=simpay]');if(!t||!TESTE.local()||testePorLink||S.simBusy)return;S.simBusy=true;keep();
  setTimeout(function(){S.simBusy=false;CartinhasPagamento.aplicarCobranca({status:'pago',confirmadoPeloServidor:true,teste:true})},700)});
 /* pedido final: vincula a versão conferida ao pedido, grava e abre a entrega */
 var fin2=finish;finish=function(){var teste=!!S.simulado,srv=S.urlServidor||null;S.simulado=false;S.urlServidor=null;fin2.apply(this,arguments);
@@ -3610,7 +3611,7 @@ function srvRun(){
  var g=SRVGEN,pay=srvPayload(),ps=JSON.stringify(pay),sigs=srvSigs(),st=S.srv,p;
  if(st&&st.ok&&st.ps===ps)return Promise.resolve(true);
  if(!S.srvForce&&Date.now()-SRVLAST<2500&&S.srvErr)return Promise.resolve(false);
- if(!st||!st.id)p=srvApi('POST','/api/cartinhas',{conteudo:pay}).then(function(r){if(g!==SRVGEN)throw {skip:1};st=S.srv={id:r.id,tc:r.token_comprador,ps:ps,sigs:{},ok:false};srvTc(st)});
+ if(!st||!st.id)p=srvApi('POST','/api/cartinhas',{conteudo:pay,teste:testePorLink}).then(function(r){if(g!==SRVGEN)throw {skip:1};st=S.srv={id:r.id,tc:r.token_comprador,ps:ps,sigs:{},ok:false};srvTc(st)});
  else p=srvApi('PUT','/api/cartinhas/'+st.id,{conteudo:pay},{'x-token-comprador':st.tc}).then(function(){st.ps=ps;st.ok=false});
  return p.then(function(){if(g===SRVGEN&&S.srv===st){st.ok=true;S.srvErr='';S.srvOff=false}return g===SRVGEN},function(e){
   if(e&&e.skip)return false;
@@ -3625,7 +3626,7 @@ var pd0=persistDraft;persistDraft=function(){pd0.apply(this,arguments);if(S.prev
 document.addEventListener('click',function(e){var t=e.target.closest('[data-go]');if(t&&t.dataset.go==='criar'){SRVGEN++;S.srv=null;S.srvErr='';S.srvOff=false;if(SRVPOLL){clearInterval(SRVPOLL);SRVPOLL=null}}},true);
 /* não deixa pagar se a cartinha não está salva no servidor (em teste, sem servidor, segue como antes) */
 document.addEventListener('click',function(e){var t=e.target.closest('[data-m=checkout]');if(!t)return;e.stopImmediatePropagation();e.preventDefault();
- srvSync(true).then(function(ok){if(ok||(TESTE.ativo()&&S.srvOff&&!S.srv)){S.srvErr='';S.offer=false;S.pay=true;draw();top0()}else{S.srvErr='save';draw()}})},true);
+ srvSync(true).then(function(ok){if(ok||(TESTE.local()&&!testePorLink&&S.srvOff&&!S.srv)){S.srvErr='';S.offer=false;S.pay=true;draw();top0()}else{S.srvErr='save';draw()}})},true);
 var of0=offerPage;offerPage=function(){var h=of0();if(S.srvErr==='save')h=h.replace('<div class="preview-actions">','<p class="pay-state err" role="alert">Não conseguimos salvar sua cartinha agora. Confira a conexão e toque em Desbloquear de novo.</p><div class="preview-actions">');return h};
 /* pagamento confirmado = o servidor diz que liberou */
 var envioMidiasPago=false;
@@ -3645,7 +3646,7 @@ function srvPoll(){if(!S.pay||!S.srv||!S.srv.id||S.done){clearInterval(SRVPOLL);
  srvApi('GET','/api/acesso/'+tc).then(function(r){if(r.liberada&&S.srv&&S.srv.tc===tc)srvAplicar(r,tc)},function(){})}
 document.addEventListener('click',function(e){var t=e.target.closest('[data-m=simpay]');if(!t||!TESTE.ativo()||!(S.srv&&S.srv.id))return;e.stopImmediatePropagation();if(S.simBusy)return;S.simBusy=true;keep();
  var st=S.srv,h={'x-token-comprador':st.tc};
- srvApi('POST','/api/teste/liberar',{cartinha_id:st.id},h).then(function(){return srvApi('GET','/api/acesso/'+st.tc)}).then(function(r){S.simBusy=false;if(r.liberada)srvAplicar(r,st.tc);else keep()},function(){S.simBusy=false;keep()})},true);
+ srvApi('POST','/api/teste/liberar',{cartinha_id:st.id},h).then(function(){return srvApi('GET','/api/acesso/'+st.tc)}).then(function(r){S.simBusy=false;if(r.liberada)srvAplicar(r,st.tc);else keep()},function(err){S.simBusy=false;keep();window.alert(err.message||'Não foi possível simular o pagamento.')})},true);
 var ac0=CartinhasPagamento.aplicarCobranca;CartinhasPagamento.aplicarCobranca=function(c){if(c&&c.srv&&c.confirmadoPeloServidor===true&&c.status==='pago'){S.srvTd=c.srv.td;SRVLINK[c.srv.td]=c.srv}return ac0.apply(this,arguments)};
 var fin3=finish;finish=function(){var td=S.srvTd,a=td&&SRVLINK[td];fin3.apply(this,arguments);S.srvTd=null;
  var o=S.ped&&PED[S.ped];if(a&&o&&o.token===td){o.linkComprador=a.linkComprador;o.tc=a.tc;o.srvId=a.id;dbPut(o)}};

@@ -126,7 +126,7 @@ async function rota(request, env) {
     const e = validarConteudo(body && body.conteudo); if (e) return erro(400, e);
     const tc = novoToken(), td = novoToken();
     const r = await sbRest(env, 'cartinhas', { method: 'POST', headers: { Prefer: 'return=representation' },
-      body: JSON.stringify({ conteudo: limpar(body.conteudo), token_comprador: tc, token_destinatario: td, criada_em: new Date().toISOString() }) });
+      body: JSON.stringify({ conteudo: { ...limpar(body.conteudo), teste: env.TESTE_SEM_COBRANCA === 'ativo' && body.teste === true }, token_comprador: tc, token_destinatario: td, criada_em: new Date().toISOString() }) });
     return json({ id: r[0].id, token_comprador: tc }, 201);
   }
 
@@ -137,7 +137,7 @@ async function rota(request, env) {
     const body = await request.json().catch(() => null);
     if (JSON.stringify(body || {}).length > MAX_CONTEUDO) return erro(413, 'conteúdo grande demais');
     const e = validarConteudo(body && body.conteudo); if (e) return erro(400, e);
-    const atual = conteudoDe(row), novo = limpar(body.conteudo); novo.midias = atual.midias || {};
+    const atual = conteudoDe(row), novo = limpar(body.conteudo); novo.midias = atual.midias || {}; novo.teste = atual.teste === true;
     if (novo.d === 'print') { // impressão leva só a foto
       for (const n of ['audio', 'video']) if (novo.midias[n]) { await stApagar(env, novo.midias[n].path); delete novo.midias[n]; }
     }
@@ -237,12 +237,14 @@ async function rota(request, env) {
     return liberar(env, origin, String(body.cartinha_id), { origem: 'pagamento', referencia: String(body.referencia || '').slice(0, 120) });
   }
 
-  /* SIMULAÇÃO: só existe com AMBIENTE=teste e em localhost. Em produção responde 404. */
+  /* Simulação local ou para cartinhas criadas no modo de teste temporário. */
   if (p === '/api/teste/liberar' && m === 'POST') {
     const host = url.hostname;
-    if (env.AMBIENTE !== 'teste' || !['localhost', '127.0.0.1'].includes(host)) return erro(404, 'não encontrada');
+    const local = env.AMBIENTE === 'teste' && ['localhost', '127.0.0.1'].includes(host);
+    if (!local && env.TESTE_SEM_COBRANCA !== 'ativo') return erro(404, 'não encontrada');
     const body = await request.json().catch(() => null);
     const [row, bad] = await comprador(request, env, String(body && body.cartinha_id || '')); if (bad) return bad;
+    if (!local && conteudoDe(row).teste !== true) return erro(403, 'cartinha fora do modo de teste');
     return liberar(env, origin, row.id, { origem: 'teste' });
   }
 
