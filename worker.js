@@ -88,7 +88,8 @@ function validarConteudo(c) {
 function limpar(c) { // só o que o servidor aceita guardar
   return { v: 1, k: c.k, d: c.d, l: { g: c.l.g, p: c.l.p, c: c.l.c || '', s: c.l.s || '' }, vx: { fx: c.vx.fx, vt: c.vx.vt, vc: c.vx.vc || '' },
     a: c.a && typeof c.a === 'object' ? c.a : {}, eds: c.eds && typeof c.eds === 'object' ? c.eds : {},
-    poster: c.poster || null, vmeta: c.vmeta && typeof c.vmeta === 'object' ? { dur: Number(c.vmeta.dur) || 0, name: String(c.vmeta.name || '').slice(0, 120) } : null };
+    midias_esperadas: Array.isArray(c.arquivos) ? [...new Set(c.arquivos.filter(n => typeof n === 'string' && NOME_MIDIA.test(n) && (c.d !== 'print' || n.startsWith('foto-'))))] : [],
+    poster: null, vmeta: c.vmeta && typeof c.vmeta === 'object' ? { dur: Number(c.vmeta.dur) || 0, name: String(c.vmeta.name || '').slice(0, 120) } : null };
 }
 
 /* ---------- links (usam o domínio do site) ---------- */
@@ -148,9 +149,11 @@ async function rota(request, env) {
   if ((x = p.match(/^\/api\/cartinhas\/([^/]+)\/midia\/([^/]+)$/)) && (m === 'POST' || m === 'DELETE')) {
     if (!NOME_MIDIA.test(x[2])) return erro(400, 'nome de mídia inválido');
     const [row, bad] = await comprador(request, env, x[1]); if (bad) return bad;
-    if (row.liberada_em) return erro(409, 'cartinha já liberada');
+    if (!row.liberada_em) return erro(403, 'mídia disponível após o pagamento');
     const c = conteudoDe(row); c.midias = c.midias || {};
     const nome = x[2], tipo = nome.split('-')[0], antigo = c.midias[nome];
+    if (Array.isArray(c.midias_esperadas) && (m !== 'POST' || !c.midias_esperadas.includes(nome))) return erro(409, 'mídia fora do pedido');
+    if (Array.isArray(c.midias_esperadas) && antigo) return json({ ok: true, nome });
     if (m === 'DELETE') {
       if (antigo) { await stApagar(env, antigo.path); delete c.midias[nome]; await salvarConteudo(env, row.id, c); }
       return json({ ok: true });
@@ -181,10 +184,12 @@ async function rota(request, env) {
     if (antigo && antigo.path !== path) await stApagar(env, antigo.path);
     const up = await fetch(stObj(env, path), { method: 'POST', body: buf, headers: sbHeaders(env, { 'content-type': mime, 'x-upsert': 'true', 'cache-control': 'max-age=3600' }) });
     if (!up.ok) return erro(502, 'falha ao guardar a mídia');
-    c.midias[nome] = { path, mime, size: buf.byteLength };
+    c.midias[nome] = { path, mime, size: buf.size };
     await salvarConteudo(env, row.id, c);
     return json({ ok: true, nome });
   }
+
+  const midiasProntas = c => (c.midias_esperadas || []).every(nome => !!(c.midias || {})[nome]);
 
   /* o comprador (link privado) lê o estado; é também o que o navegador consulta para saber se o pagamento foi confirmado */
   if ((x = p.match(/^\/api\/acesso\/([^/]+)$/)) && m === 'GET') {
@@ -192,6 +197,7 @@ async function rota(request, env) {
     const row = await porCol(env, 'token_comprador', x[1]); if (!row) return erro(404, 'não encontrada');
     const c = conteudoDe(row), lib = !!row.liberada_em;
     if (!lib) return json({ id: row.id, liberada: false });
+    if (!midiasProntas(c)) return json({ id: row.id, liberada: true, midias_pendentes: true });
     const l = links(origin, row, c);
     return json({ id: row.id, liberada: true, liberada_em: row.liberada_em, criada_em: row.criada_em, pagamento: c.pagamento || null,
       link_comprador: l.comprador, link_destinatario: l.destinatario, token_destinatario: row.token_destinatario,
@@ -203,7 +209,7 @@ async function rota(request, env) {
     if (!TOKEN_RE.test(x[1])) return erro(404, 'não encontrada');
     const row = await porCol(env, 'token_destinatario', x[1]);
     if (!row || !row.liberada_em) return erro(404, 'não encontrada');
-    const c = conteudoDe(row); if (c.d === 'print') return erro(404, 'não encontrada');
+    const c = conteudoDe(row); if (c.d === 'print' || !midiasProntas(c)) return erro(404, 'não encontrada');
     return json({ carta: publico(c, x[1]) });
   }
 
@@ -211,7 +217,7 @@ async function rota(request, env) {
   if ((x = p.match(/^\/api\/midia\/([^/]+)\/([^/]+)$/)) && (m === 'GET' || m === 'HEAD')) {
     if (!TOKEN_RE.test(x[1]) || !NOME_MIDIA.test(x[2])) return erro(404, 'não encontrada');
     let row = await porCol(env, 'token_destinatario', x[1]);
-    if (row) { if (!row.liberada_em || conteudoDe(row).d === 'print') row = null; }
+    if (row) { if (!row.liberada_em || conteudoDe(row).d === 'print' || !midiasProntas(conteudoDe(row))) row = null; }
     else { row = await porCol(env, 'token_comprador', x[1]); } // o comprador vê a mídia do próprio rascunho
     if (!row) return erro(404, 'não encontrada');
     const md = (conteudoDe(row).midias || {})[x[2]]; if (!md) return erro(404, 'não encontrada');
@@ -234,7 +240,12 @@ async function rota(request, env) {
   /* SIMULAÇÃO: só existe com AMBIENTE=teste e em localhost. Em produção responde 404. */
   if (p === '/api/teste/liberar' && m === 'POST') {
     const host = url.hostname;
-    if (env.AMBIENTE !== 'teste' || !['localhost', '127.0.0.1'].includes(host)) return erro(404, 'não encontrada');
+    const local = env.AMBIENTE === 'teste' && ['localhost', '127.0.0.1'].includes(host);
+    if (!local) {
+      const codigo = env.PAGAMENTO_TESTE_CODIGO;
+      if (typeof codigo !== 'string' || codigo.length < 32) return erro(404, 'não encontrada');
+      if (!igual(request.headers.get('x-pagamento-teste-codigo'), codigo)) return erro(403, 'código de teste inválido');
+    }
     const body = await request.json().catch(() => null);
     const [row, bad] = await comprador(request, env, String(body && body.cartinha_id || '')); if (bad) return bad;
     return liberar(env, origin, row.id, { origem: 'teste' });
