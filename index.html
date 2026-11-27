@@ -3646,31 +3646,6 @@ function srvPoll(){if(!S.pay||!S.srv||!S.srv.id||S.done){clearInterval(SRVPOLL);
 document.addEventListener('click',function(e){var t=e.target.closest('[data-m=simpay]');if(!t||!TESTE.ativo()||!(S.srv&&S.srv.id))return;e.stopImmediatePropagation();if(S.simBusy)return;S.simBusy=true;keep();
  var st=S.srv,h={'x-token-comprador':st.tc};
  srvApi('POST','/api/teste/liberar',{cartinha_id:st.id},h).then(function(){return srvApi('GET','/api/acesso/'+st.tc)}).then(function(r){S.simBusy=false;if(r.liberada)srvAplicar(r,st.tc);else keep()},function(){S.simBusy=false;keep()})},true);
-var pagamentoTestePrivado = new URLSearchParams(location.search).get('teste-pagamento') === '1';
-if (pagamentoTestePrivado && !TESTE.ativo()) {
- var checkoutPrivado = checkout;
- var erroTestePrivado = '';
- checkout = function() {
-  var html = checkoutPrivado.apply(this, arguments);
-  return html.replace('</div></main>', '<section class="test-box"><p class="test-tag">Teste privado</p>' +
-   (erroTestePrivado ? '<p class="field-hint" role="alert">' + esc(erroTestePrivado) + '</p>' : '') +
-   btn('outline', S.simBusy ? 'Simulando…' : 'Simular pagamento aprovado', 'type="button" data-m="simpay-privado"' + (S.simBusy ? ' disabled' : '')) + '</section></div></main>');
- };
- document.addEventListener('click', function(e) {
-  var t=e.target.closest('[data-m="simpay-privado"]');
-  if (!t) return;
-  e.preventDefault();
-  if (S.simBusy || !S.srv || !S.srv.id) return;
-  var codigo=window.prompt('Digite seu código privado de teste');
-  if (!codigo) return;
-  var st=S.srv;
-  S.simBusy=true; erroTestePrivado=''; draw();
-  srvApi('POST','/api/teste/liberar',{cartinha_id:st.id},{'x-token-comprador':st.tc,'x-pagamento-teste-codigo':codigo})
-   .then(function(){return srvApi('GET','/api/acesso/'+st.tc)})
-   .then(function(r){S.simBusy=false;if(r.liberada){srvAplicar(r,st.tc);return}throw new Error('pagamento pendente')})
-   .catch(function(err){S.simBusy=false;erroTestePrivado=err.status===403?'Código incorreto ou cartinha sem acesso.':err.status===404?'O teste privado ainda não foi configurado.':'Não foi possível liberar a cartinha de teste.';draw()});
- }, true);
-}
 var ac0=CartinhasPagamento.aplicarCobranca;CartinhasPagamento.aplicarCobranca=function(c){if(c&&c.srv&&c.confirmadoPeloServidor===true&&c.status==='pago'){S.srvTd=c.srv.td;SRVLINK[c.srv.td]=c.srv}return ac0.apply(this,arguments)};
 var fin3=finish;finish=function(){var td=S.srvTd,a=td&&SRVLINK[td];fin3.apply(this,arguments);S.srvTd=null;
  var o=S.ped&&PED[S.ped];if(a&&o&&o.token===td){o.linkComprador=a.linkComprador;o.tc=a.tc;o.srvId=a.id;dbPut(o)}};

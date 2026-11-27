@@ -240,12 +240,7 @@ async function rota(request, env) {
   /* SIMULAÇÃO: só existe com AMBIENTE=teste e em localhost. Em produção responde 404. */
   if (p === '/api/teste/liberar' && m === 'POST') {
     const host = url.hostname;
-    const local = env.AMBIENTE === 'teste' && ['localhost', '127.0.0.1'].includes(host);
-    if (!local) {
-      const codigo = env.PAGAMENTO_TESTE_CODIGO;
-      if (typeof codigo !== 'string' || codigo.length < 32) return erro(404, 'não encontrada');
-      if (!igual(request.headers.get('x-pagamento-teste-codigo'), codigo)) return erro(403, 'código de teste inválido');
-    }
+    if (env.AMBIENTE !== 'teste' || !['localhost', '127.0.0.1'].includes(host)) return erro(404, 'não encontrada');
     const body = await request.json().catch(() => null);
     const [row, bad] = await comprador(request, env, String(body && body.cartinha_id || '')); if (bad) return bad;
     return liberar(env, origin, row.id, { origem: 'teste' });
