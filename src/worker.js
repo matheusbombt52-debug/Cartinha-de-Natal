@@ -38,6 +38,7 @@ function igual(a, b) { // comparação em tempo constante
 /* ---------- Supabase (só aqui, com a chave secreta do ambiente) ---------- */
 function sbHeaders(env, extra = {}) {
   const k = env.SUPABASE_SECRET_KEY;
+  if (!k || !env.SUPABASE_URL) throw new Error('Configure SUPABASE_URL e SUPABASE_SECRET_KEY nas variaveis do Worker.');
   const h = { apikey: k, ...extra };
   if (!/^sb_/.test(k)) h.authorization = 'Bearer ' + k; // chaves antigas (JWT) também vão em Authorization
   return h;
@@ -87,7 +88,8 @@ function validarConteudo(c) {
 function limpar(c) { // só o que o servidor aceita guardar
   return { v: 1, k: c.k, d: c.d, l: { g: c.l.g, p: c.l.p, c: c.l.c || '', s: c.l.s || '' }, vx: { fx: c.vx.fx, vt: c.vx.vt, vc: c.vx.vc || '' },
     a: c.a && typeof c.a === 'object' ? c.a : {}, eds: c.eds && typeof c.eds === 'object' ? c.eds : {},
-    poster: c.poster || null, vmeta: c.vmeta && typeof c.vmeta === 'object' ? { dur: Number(c.vmeta.dur) || 0, name: String(c.vmeta.name || '').slice(0, 120) } : null };
+    midias_esperadas: Array.isArray(c.arquivos) ? [...new Set(c.arquivos.filter(n => typeof n === 'string' && NOME_MIDIA.test(n) && (c.d !== 'print' || n.startsWith('foto-'))))] : [],
+    poster: null, vmeta: c.vmeta && typeof c.vmeta === 'object' ? { dur: Number(c.vmeta.dur) || 0, name: String(c.vmeta.name || '').slice(0, 120) } : null };
 }
 
 /* ---------- links (usam o domínio do site) ---------- */
@@ -124,7 +126,7 @@ async function rota(request, env) {
     const e = validarConteudo(body && body.conteudo); if (e) return erro(400, e);
     const tc = novoToken(), td = novoToken();
     const r = await sbRest(env, 'cartinhas', { method: 'POST', headers: { Prefer: 'return=representation' },
-      body: JSON.stringify({ conteudo: limpar(body.conteudo), token_comprador: tc, token_destinatario: td, criada_em: new Date().toISOString() }) });
+      body: JSON.stringify({ conteudo: { ...limpar(body.conteudo), teste: env.TESTE_SEM_COBRANCA === 'ativo' && body.teste === true }, token_comprador: tc, token_destinatario: td, criada_em: new Date().toISOString() }) });
     return json({ id: r[0].id, token_comprador: tc }, 201);
   }
 
@@ -135,7 +137,7 @@ async function rota(request, env) {
     const body = await request.json().catch(() => null);
     if (JSON.stringify(body || {}).length > MAX_CONTEUDO) return erro(413, 'conteúdo grande demais');
     const e = validarConteudo(body && body.conteudo); if (e) return erro(400, e);
-    const atual = conteudoDe(row), novo = limpar(body.conteudo); novo.midias = atual.midias || {};
+    const atual = conteudoDe(row), novo = limpar(body.conteudo); novo.midias = atual.midias || {}; novo.teste = atual.teste === true;
     if (novo.d === 'print') { // impressão leva só a foto
       for (const n of ['audio', 'video']) if (novo.midias[n]) { await stApagar(env, novo.midias[n].path); delete novo.midias[n]; }
     }
@@ -147,9 +149,11 @@ async function rota(request, env) {
   if ((x = p.match(/^\/api\/cartinhas\/([^/]+)\/midia\/([^/]+)$/)) && (m === 'POST' || m === 'DELETE')) {
     if (!NOME_MIDIA.test(x[2])) return erro(400, 'nome de mídia inválido');
     const [row, bad] = await comprador(request, env, x[1]); if (bad) return bad;
-    if (row.liberada_em) return erro(409, 'cartinha já liberada');
+    if (!row.liberada_em) return erro(403, 'mídia disponível após o pagamento');
     const c = conteudoDe(row); c.midias = c.midias || {};
     const nome = x[2], tipo = nome.split('-')[0], antigo = c.midias[nome];
+    if (Array.isArray(c.midias_esperadas) && (m !== 'POST' || !c.midias_esperadas.includes(nome))) return erro(409, 'mídia fora do pedido');
+    if (Array.isArray(c.midias_esperadas) && antigo) return json({ ok: true, nome });
     if (m === 'DELETE') {
       if (antigo) { await stApagar(env, antigo.path); delete c.midias[nome]; await salvarConteudo(env, row.id, c); }
       return json({ ok: true });
@@ -158,18 +162,34 @@ async function rota(request, env) {
     const ext = TIPOS[tipo].mimes[mime];
     if (!ext) return erro(415, 'formato não aceito');
     const len = Number(request.headers.get('content-length') || 0);
-    if (!len) return erro(411, 'tamanho ausente');
-    if (len > TIPOS[tipo].max) return erro(413, 'arquivo grande demais');
-    const buf = await request.arrayBuffer();
-    if (buf.byteLength > TIPOS[tipo].max) return erro(413, 'arquivo grande demais');
+    const max = TIPOS[tipo].max;
+    if (len > max) return erro(413, 'arquivo grande demais');
+    if (!request.body) return erro(400, 'arquivo vazio');
+    const reader = request.body.getReader();
+    const chunks = [];
+    let size = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > max) {
+        await reader.cancel();
+        return erro(413, 'arquivo grande demais');
+      }
+      chunks.push(value);
+    }
+    if (!size) return erro(400, 'arquivo vazio');
+    const buf = new Blob(chunks, { type: mime });
     const path = row.id + '/' + nome + '.' + ext;
     if (antigo && antigo.path !== path) await stApagar(env, antigo.path);
     const up = await fetch(stObj(env, path), { method: 'POST', body: buf, headers: sbHeaders(env, { 'content-type': mime, 'x-upsert': 'true', 'cache-control': 'max-age=3600' }) });
     if (!up.ok) return erro(502, 'falha ao guardar a mídia');
-    c.midias[nome] = { path, mime, size: buf.byteLength };
+    c.midias[nome] = { path, mime, size: buf.size };
     await salvarConteudo(env, row.id, c);
     return json({ ok: true, nome });
   }
+
+  const midiasProntas = c => (c.midias_esperadas || []).every(nome => !!(c.midias || {})[nome]);
 
   /* o comprador (link privado) lê o estado; é também o que o navegador consulta para saber se o pagamento foi confirmado */
   if ((x = p.match(/^\/api\/acesso\/([^/]+)$/)) && m === 'GET') {
@@ -177,6 +197,7 @@ async function rota(request, env) {
     const row = await porCol(env, 'token_comprador', x[1]); if (!row) return erro(404, 'não encontrada');
     const c = conteudoDe(row), lib = !!row.liberada_em;
     if (!lib) return json({ id: row.id, liberada: false });
+    if (!midiasProntas(c)) return json({ id: row.id, liberada: true, midias_pendentes: true });
     const l = links(origin, row, c);
     return json({ id: row.id, liberada: true, liberada_em: row.liberada_em, criada_em: row.criada_em, pagamento: c.pagamento || null,
       link_comprador: l.comprador, link_destinatario: l.destinatario, token_destinatario: row.token_destinatario,
@@ -188,7 +209,7 @@ async function rota(request, env) {
     if (!TOKEN_RE.test(x[1])) return erro(404, 'não encontrada');
     const row = await porCol(env, 'token_destinatario', x[1]);
     if (!row || !row.liberada_em) return erro(404, 'não encontrada');
-    const c = conteudoDe(row); if (c.d === 'print') return erro(404, 'não encontrada');
+    const c = conteudoDe(row); if (c.d === 'print' || !midiasProntas(c)) return erro(404, 'não encontrada');
     return json({ carta: publico(c, x[1]) });
   }
 
@@ -196,7 +217,7 @@ async function rota(request, env) {
   if ((x = p.match(/^\/api\/midia\/([^/]+)\/([^/]+)$/)) && (m === 'GET' || m === 'HEAD')) {
     if (!TOKEN_RE.test(x[1]) || !NOME_MIDIA.test(x[2])) return erro(404, 'não encontrada');
     let row = await porCol(env, 'token_destinatario', x[1]);
-    if (row) { if (!row.liberada_em || conteudoDe(row).d === 'print') row = null; }
+    if (row) { if (!row.liberada_em || conteudoDe(row).d === 'print' || !midiasProntas(conteudoDe(row))) row = null; }
     else { row = await porCol(env, 'token_comprador', x[1]); } // o comprador vê a mídia do próprio rascunho
     if (!row) return erro(404, 'não encontrada');
     const md = (conteudoDe(row).midias || {})[x[2]]; if (!md) return erro(404, 'não encontrada');
@@ -216,12 +237,14 @@ async function rota(request, env) {
     return liberar(env, origin, String(body.cartinha_id), { origem: 'pagamento', referencia: String(body.referencia || '').slice(0, 120) });
   }
 
-  /* SIMULAÇÃO: só existe com AMBIENTE=teste e em localhost. Em produção responde 404. */
+  /* Simulação local ou para cartinhas criadas no modo de teste temporário. */
   if (p === '/api/teste/liberar' && m === 'POST') {
     const host = url.hostname;
-    if (env.AMBIENTE !== 'teste' || !['localhost', '127.0.0.1'].includes(host)) return erro(404, 'não encontrada');
+    const local = env.AMBIENTE === 'teste' && ['localhost', '127.0.0.1'].includes(host);
+    if (!local && env.TESTE_SEM_COBRANCA !== 'ativo') return erro(404, 'não encontrada');
     const body = await request.json().catch(() => null);
     const [row, bad] = await comprador(request, env, String(body && body.cartinha_id || '')); if (bad) return bad;
+    if (!local && conteudoDe(row).teste !== true) return erro(403, 'cartinha fora do modo de teste');
     return liberar(env, origin, row.id, { origem: 'teste' });
   }
 
