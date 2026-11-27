@@ -146,7 +146,7 @@ async function enviarEmail(env,row) {
     return;
   }
   const result=await fetch('https://api.brevo.com/v3/smtp/email',{
-    method:'POST',redirect:'error',headers:{'api-key':key,'Content-Type':'application/json'},
+    method:'POST',redirect:'manual',headers:{'api-key':key,'Content-Type':'application/json'},
     body:JSON.stringify({
       sender:{name:'Cartinhas de Natal',email:from},
       subject:'Sua Cartinha de Natal está pronta!',
