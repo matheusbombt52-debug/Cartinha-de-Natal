@@ -4,7 +4,6 @@
   "name": "cartinha-de-natal",
   "main": "src/worker.js",
   "keep_vars": true,
-  "vars": { "TESTE_SEM_COBRANCA": "ativo" },
   "compatibility_date": "2025-01-01",
   "assets": {
     "directory": ".",
