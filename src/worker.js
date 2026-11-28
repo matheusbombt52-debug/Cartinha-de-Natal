@@ -335,7 +335,7 @@ const uuidRE = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const tentativaPor = async (env, filtro) => (await sbRest(env, 'cartinha_cobrancas?' + filtro + '&limit=1'))[0];
 
 async function cobrarCakto(request, env, row) {
-  if (!caktoReady(env)) return erro(503, 'Pagamento indisponível no momento.');
+  if (!caktoReady(env)) { console.error('Cakto diagnóstico: configuracao_ausente'); return erro(503, 'Pagamento indisponível no momento.'); }
   if (row.liberada_em || conteudoDe(row).teste) return erro(409, 'Pedido já liberado ou de teste.');
   const body = await request.json().catch(() => null);
   const method = body?.method;
@@ -344,10 +344,6 @@ async function cobrarCakto(request, env, row) {
   if (!s(c.name, 120) || !c.name.trim() || !s(c.email, 200) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.email) ||
       !/^55\d{10,11}$/.test(c.phone) || !/^\d{11}$/.test(c.cpf) || !uuidRE.test(c.fingerprint || '')) return erro(400, 'Confira nome, e-mail, telefone e CPF.');
   if (method === 'credit_card' && (!s(body.cardToken, 4096) || !body.cardToken || !s(body.profiling, 4096) || !body.profiling)) return erro(400, 'Token do cartão inválido.');
-  const auth = await fetch(CAKTO + 'token/', {method:'POST', body:new URLSearchParams({client_id:env.CAKTO_CLIENT_ID,client_secret:env.CAKTO_CLIENT_SECRET})});
-  if (!auth.ok) return erro(503, 'Não conseguimos conectar ao pagamento.');
-  const {access_token} = await auth.json();
-  if (!access_token) return erro(503, 'Não conseguimos conectar ao pagamento.');
   const filtro = 'cartinha_id=eq.' + row.id;
   let attempt = await tentativaPor(env, filtro);
   if (!attempt) {
@@ -357,10 +353,17 @@ async function cobrarCakto(request, env, row) {
     });
     attempt = await tentativaPor(env, filtro);
   }
-  if (!attempt) return erro(503, 'Não foi possível registrar a cobrança.');
+  if (!attempt) { console.error('Cakto diagnóstico: reserva_sem_registro'); return erro(503, 'Não foi possível registrar a cobrança.'); }
   if (attempt.resposta) return json(attempt.resposta);
   if (attempt.id !== body.attempt || attempt.metodo !== method) return erro(409, 'Já existe uma tentativa de cobrança para esta cartinha.');
   if (Date.now() - Date.parse(attempt.criada_em) > 23 * 3600000) return erro(409, 'Esta tentativa precisa ser conferida no painel de pagamentos.');
+  const auth = await fetch(CAKTO + 'token/', {method:'POST', body:new URLSearchParams({client_id:env.CAKTO_CLIENT_ID,client_secret:env.CAKTO_CLIENT_SECRET})});
+  if (!auth.ok) {
+    console.error('Cakto autenticação: HTTP '+auth.status);
+    return erro(auth.status===429||auth.status>=500?503:424,'Não conseguimos conectar ao pagamento.');
+  }
+  const {access_token} = await auth.json();
+  if (!access_token) { console.error('Cakto diagnóstico: oauth_sem_token'); return erro(503, 'Não conseguimos conectar ao pagamento.'); }
   const payload = {
     paymentMethod:method,
     customer:{name:c.name.trim(),email:c.email,phone:c.phone,docType:'cpf',docNumber:c.cpf,fingerprint:c.fingerprint},
@@ -381,7 +384,7 @@ async function cobrarCakto(request, env, row) {
     console.error('Cakto cobrança '+method+': HTTP '+payment.status);
     if(method==='pix' && payment.status===409 && typeof failure?.detail==='string' && /em processamento/i.test(failure.detail)) return json({code:'pix_em_processamento',erro:'Seu Pix ainda está sendo preparado.'},409);
     if(payment.status===400 || payment.status===422) return erro(400,'Confira os dados de pagamento e tente novamente.');
-    if(payment.status===429) return erro(503,'O serviço de pagamento está ocupado.');
+    if(payment.status===429) { console.error('Cakto diagnóstico: api_limite_429'); return erro(503,'O serviço de pagamento está ocupado.'); }
     return erro(payment.status>=500?502:424, 'A Cakto não confirmou a criação da cobrança. Confira os dados e o painel antes de tentar novamente.');
   }
   const result = await payment.json();
