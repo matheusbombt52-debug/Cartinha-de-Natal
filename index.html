@@ -2622,7 +2622,7 @@ var body;if(st===0){body='<div class="choice-list">'+btn('letter',ic('tree-pine'
 else if(st===4){body=dvBlock()}else{var f='';if(st===1)f=sa?fld('childName','Primeiro nome ou apelido da criança','Ex.: Sofia'):fld('recipient','Nome ou como você chama essa pessoa','Ex.: Mãe, Ana, vovó Lúcia')+fld('relationship','Qual é a relação de vocês?','Ex.: minha mãe, meu companheiro, minha melhor amiga');
 if(st===2)f=sa?fld('achievement','O que a criança aprendeu, fez ou conquistou?','Ex.: Aprendeu a andar de bicicleta sem rodinhas, mesmo com medo no começo.',1)+'<p class="field-hint">Uma conquista pequena também pode ser muito especial.</p>':fld('memory','Sua lembrança ou agradecimento','Ex.: Mãe, tentei fazer sua rabanada e lembrei de nós na cozinha, disputando a primeira.',1)+'<p class="field-hint">Escreva como você contaria para essa pessoa. Use “eu” ou “nós” e só os detalhes que quer incluir.</p>';
 if(st===3)f=sa?fld('childLetter','O que da cartinha da criança você quer mencionar?','Ex.: Escreveu que estava com saudade da vovó.',1,1)+'<p class="field-hint">Se a criança não escreveu ou você não quiser incluir nada, pode deixar em branco. O Papai Noel não promete presentes.</p>':fld('signature','Sua assinatura','Ex.: Com carinho, sua filha');body='<div class="quiz-fields">'+f+(st===1?gdBlock():'')+'</div>'+(st===5?mediaBlock():'')}
-return header(true)+'<main class="quiz-page"><div class="quiz-wrap"><div class="quiz-top">'+(st===0?link(ic('arrow-left')+' Voltar ao início','btn v-ghost',''):btn('ghost',ic('arrow-left')+' Voltar','type="button" data-act="prev"'))+'<span>Etapa '+(st+1)+' de 7</span></div><div class="quiz-progress">'+[0,1,2,3,4,5,6].map(function(i){return '<span class="'+(i<=st?'complete':'')+'"></span>'}).join('')+'</div><div class="quiz-heading"><p class="eyebrow">'+ic('sparkles','size-3')+' '+(st===0?'Sua surpresa começa aqui':sa?'Uma cartinha do Papai Noel':'Uma cartinha com o seu carinho')+'</p><h1>'+H[st]+'</h1><p>'+U[st]+'</p></div><form id="qf">'+body+'<div class="quiz-actions">'+btn('christmas',(st===5?(voiceJob?'Finalize o áudio para continuar':photoBusy?'Preparando foto…':S.m.photos.length||S.m.audio||(S.m.video&&S.a.delivery!=='print')?'Continuar':'Continuar sem mídia'):'Continuar')+ic('arrow-right'),'type="submit" id="go"'+(ok()?'':' disabled'))+(st===3&&sa?btn('ghost','Pular e ver minha cartinha','type="button" data-act="skip"'):'')+'</div></form><p class="privacy-note">'+ic('lock-keyhole')+' Sem cadastro. Suas respostas ficam só neste navegador.</p></div></main>'}
+return header(true)+'<main class="quiz-page"><div class="quiz-wrap"><div class="quiz-top">'+(st===0?link(ic('arrow-left')+' Voltar ao início','btn v-ghost',''):btn('ghost',ic('arrow-left')+' Voltar','type="button" data-act="prev"'))+'<span>Etapa '+(st+1)+' de '+(S.a.delivery==='print'?6:7)+'</span></div><div class="quiz-progress">'+(S.a.delivery==='print'?[0,1,2,3,4,5]:[0,1,2,3,4,5,6]).map(function(i){return '<span class="'+(i<=st?'complete':'')+'"></span>'}).join('')+'</div><div class="quiz-heading"><p class="eyebrow">'+ic('sparkles','size-3')+' '+(st===0?'Sua surpresa começa aqui':sa?'Uma cartinha do Papai Noel':'Uma cartinha com o seu carinho')+'</p><h1>'+H[st]+'</h1><p>'+U[st]+'</p></div><form id="qf">'+body+'<div class="quiz-actions">'+btn('christmas',(st===5?(S.a.delivery==='print'&&!photoBusy?'Ver minha cartinha':voiceJob?'Finalize o áudio para continuar':photoBusy?'Preparando foto…':S.m.photos.length||S.m.audio||(S.m.video&&S.a.delivery!=='print')?'Continuar':'Continuar sem mídia'):'Continuar')+ic('arrow-right'),'type="submit" id="go"'+(ok()?'':' disabled'))+(st===3&&sa?btn('ghost','Pular e ver minha cartinha','type="button" data-act="skip"'):'')+'</div></form><p class="privacy-note">'+ic('lock-keyhole')+' Sem cadastro. Suas respostas ficam só neste navegador.</p></div></main>'}
 function initDeck(){var area=document.getElementById('deck');if(!area)return;var cards=C.moments,total=cards.length,cur=0,els=[],cnt=document.getElementById('deckc'),sx=null,sy=0,busy=false;
 var ST=['rotate(0deg) translateY(0px) scale(1)','rotate(2.5deg) translateY(8px) scale(0.97)','rotate(-2deg) translateY(14px) scale(0.94)','rotate(1.5deg) translateY(20px) scale(0.91)'],OP=[1,.85,.65,.4];
 for(var i=total-1;i>=0;i--){var el=document.createElement('div');el.className='deck-card';el.innerHTML='<img src="'+MOM[i]+'" alt="'+esc(cards[i].alt)+'" draggable="false"><div class="deck-body"><h4>'+esc(cards[i].title)+'</h4><p>'+esc(cards[i].text)+'</p></div>';area.appendChild(el);els.unshift(el)}
@@ -2827,7 +2827,7 @@ document.addEventListener('change',function(e){if(e.target.dataset&&e.target.dat
 var app=document.getElementById('app');
 function draw(){var h=location.hash,RV=h.indexOf('#carta-')===0,q=h==='#criar';app.innerHTML=RV?recv(h.slice(7)):q?quiz():home();try{lucide.createIcons()}catch(e){}
 if(!q&&!RV)initDeck();
-var f=document.getElementById('qf');if(f){f.onsubmit=function(e){e.preventDefault();if(!ok())return;if(S.step===6){startPrep()}else{S.step++;draw();top0()}};f.oninput=function(e){var k=e.target.dataset.k;if(k){S.a[k]=e.target.value;document.getElementById('go').disabled=!ok()}}}}
+var f=document.getElementById('qf');if(f){f.onsubmit=function(e){e.preventDefault();if(!ok())return;if(S.step===6||(S.step===5&&S.a.delivery==='print')){startPrep()}else{S.step++;draw();top0()}};f.oninput=function(e){var k=e.target.dataset.k;if(k){S.a[k]=e.target.value;document.getElementById('go').disabled=!ok()}}}}
 function top0(){window.scrollTo(0,0)}
 function nav(to){if(to==='criar'){if(location.hash!=='#criar')location.hash='criar'}else{try{history.pushState(null,'',location.pathname+location.search)}catch(e){}draw();top0()}}
 window.addEventListener('hashchange',function(){draw();top0()});
@@ -2835,7 +2835,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-go],
 if(t.dataset.go!==undefined){e.preventDefault();if(t.dataset.go==='criar'){S.step=0;S.preview=false;S.done=null;S.pay=false;S.a.delivery=''}nav(t.dataset.go)}
 else if(t.dataset.scroll){e.preventDefault();var el=document.getElementById(t.dataset.scroll);el&&el.scrollIntoView({behavior:'smooth'})}
 else if(t.dataset.kind){S.kind=t.dataset.kind;draw()}
-else if(t.dataset.act){var a=t.dataset.act;if(a==='prev')S.step--;if(a==='back3'){S.preview=false;S.step=6}if(a==='edit'){S.preview=false;S.step=1}if(a==='skip'){S.a.childLetter='';S.step=4}draw();top0()}
+else if(t.dataset.act){var a=t.dataset.act;if(a==='prev')S.step--;if(a==='back3'){S.preview=false;S.step=S.a.delivery==='print'?5:6}if(a==='edit'){S.preview=false;S.step=1}if(a==='skip'){S.a.childLetter='';S.step=4}draw();top0()}
 else if(t.classList.contains('acc-trig')){var it=t.closest('[data-faq]'),o=it.dataset.state!=='open',ns=o?'open':'closed';document.querySelectorAll('[data-faq]').forEach(function(x){x.dataset.state='closed';x.querySelector('button').dataset.state='closed';x.querySelector('button').setAttribute('aria-expanded','false');x.lastChild.dataset.state='closed';x.lastChild.hidden=true});if(o){it.dataset.state='open';t.dataset.state='open';t.setAttribute('aria-expanded','true');it.lastChild.dataset.state='open';it.lastChild.hidden=false}}});
 /* === Cartinha pessoal: relação e intenção por botões + texto com voz de conversa === */
 var REL={
@@ -3234,7 +3234,7 @@ function vtList(){return '<h2 class="fx-sub" id="vt-l">Tema e cor de destaque</h
  return '<div class="vt-card'+(on?' on':'')+'"><button type="button" class="vt-main" aria-pressed="'+on+'" data-vt="'+id+'">'+vtMini(id,on?S.vc:'')+'<span>'+T.n+(on?'<small class="vt-selected-color" style="display:block">'+T.sw.find(function(color){return color[1]===(S.vc||'')})?.[0]+'</small>':'')+'</span></button><div class="vc-row" role="group" aria-label="Cor de destaque: '+T.n+'">'
  +T.sw.map(function(s){return '<button type="button" class="vc-s" aria-pressed="'+(on&&(S.vc||'')===s[1])+'" aria-label="'+s[0]+'" title="'+s[0]+'" data-color-theme="'+id+'" data-vc="'+s[1]+'" style="--sc:'+(s[1]||T.def)+'"></button>'}).join('')+'</div></div>'}).join('')+'</div>'}
 function fxOpts(){var cur=S.fx||'nenhum',d=S.a.delivery||'wa',t=cur==='nenhum'?'Sem enfeites: só a cartinha, limpa.':d==='wa'?'No celular, o efeito aparece animado quando a pessoa abre a cartinha.':d==='print'?'Na impressão, o efeito vira uma decoração fixa na folha A4.':'No celular, o efeito aparece animado. Na impressão, vira uma decoração fixa na folha A4.';
- return '<h2 class="fx-sub" id="fx-l">Efeito da cartinha</h2><div class="fx-opts" role="radiogroup" aria-labelledby="fx-l">'+Object.keys(FX).map(function(id){return '<button type="button" class="fx-o" role="radio" aria-checked="'+(cur===id)+'" data-fx="'+id+'"><span class="fxo-demo fx-'+id+'" aria-hidden="true">'+fxLayer(id,1)+'</span><span>'+FX[id]+'</span></button>'}).join('')+'</div><p class="field-hint fx-info" role="status">'+t+'</p>'}
+ return '<h2 class="fx-sub" id="fx-l">' +(d==='print'?'Enfeites para impressão':'Efeito da cartinha')+'</h2><div class="fx-opts" role="radiogroup" aria-labelledby="fx-l">'+Object.keys(FX).map(function(id){return '<button type="button" class="fx-o" role="radio" aria-checked="'+(cur===id)+'" data-fx="'+id+'"><span class="fxo-demo fx-'+id+'" aria-hidden="true">'+fxLayer(id,1)+'</span><span>'+(d==='print'?({neve:'Flocos de neve',estrelas:'Estrelas',luzes:'Luzes de Natal',coracoes:'Corações',nenhum:'Sem enfeites'}[id]||FX[id]):FX[id])+'</span></button>'}).join('')+'</div><p class="field-hint fx-info" role="status">'+t+'</p>'}
 function vlLive(){var d=S.a.delivery||'wa',tab=S.tab||(d==='print'?'pap':'cel'),l=gen(),k=S.kind;
  var tabs=d==='both'?'<div class="m-row m-tabs" role="tablist">'+[['cel','Como fica no celular'],['pap','Como fica no papel']].map(function(x){return btn(tab===x[0]?'christmas':'outline',x[1],'type="button" role="tab" aria-selected="'+(tab===x[0])+'" data-m="tab" data-v="'+x[0]+'"')}).join('')+'</div>':'';
  return '<div class="vl-wrap">'+tabs+'<div class="vl-box" role="img" aria-label="Miniatura da cartinha com o visual escolhido"><div class="vl-in">'+(tab==='pap'?'<div class="a4prev">'+sheetHTML({k:k,l:l,m:S.m})+'</div>':'<div class="phone">'+paper(k,l.g,l.p,l.s,l.c)+'</div>')+'</div></div></div>'}
@@ -3368,13 +3368,13 @@ function a4Page(o){return header(true)+'<main class="quiz-page"><div class="quiz
 function entregaPage(o){var d=o.d,wa=d!=='print',pr=d!=='wa',u=linkDe(o),est=pubEstado(o),ok=est==='ok',msg='Preparei uma cartinha de Natal para você 🎄\n\nAbra aqui: '+u,
  pdf=typeof window.print==='function'?'<p class="field-hint dv-pdf">Você também pode salvar como PDF nas opções de impressão do seu aparelho.</p>':'',
  a4='<a class="btn v-outline" href="#a4-'+o.token+'">'+ic('file-text')+'Ver versão A4</a>',
- h='<div class="dv-card">'+(o.teste?'<span class="test-tag dv-tag">Pedido de teste</span>':'')+'<span class="dv-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><h1>Sua cartinha está pronta!</h1><p>Agora é só entregar a surpresa.</p>'+(o.teste?'':'<p class="field-hint">Procure o link de acesso no e-mail usado no pagamento. Se não encontrar, confira a caixa de spam ou lixo eletrônico.</p>')+'</div>';
+ h='<div class="dv-card">'+(o.teste?'<span class="test-tag dv-tag">Pedido de teste</span>':'')+'<span class="dv-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><h1>Sua cartinha está pronta!</h1><p>Agora é só entregar a surpresa.</p>'+(o.teste?'':'<p class="field-hint">O link de acesso vai para o e-mail informado no pagamento assim que a cartinha estiver pronta.</p>')+'</div>';
  if(wa){var nota=est==='local'?'<p class="dv-note" role="status">Prévia disponível neste navegador</p>'
    :est==='preparando'?'<p class="dv-note" role="status"><span class="pay-spin" aria-hidden="true"></span>Estamos preparando o link da sua cartinha</p>'
    :est==='falhou'?'<div class="dv-note err" role="alert"><p>Não conseguimos preparar o link agora. Você não precisa refazer a cartinha nem pagar de novo.</p>'+btn('outline',ic('refresh-cw')+'Tentar novamente','type="button" data-m="pubretry" data-id="'+esc(o.id)+'"')+'</div>':'';
   var podeCopiar=ok||est==='local';
   h+='<section class="dv-sec" aria-label="Entrega digital">'
-   +(podeCopiar?'<p class="dv-note"><strong>Guarde o link da cartinha.</strong> Toque em “Copiar link” e salve nas suas notas ou em uma conversa com você no WhatsApp.'+(est==='local'?' Nesta demo, o link só abre neste navegador.':'')+'</p>':'')
+   +(est==='local'?'<p class="dv-note">Nesta demo, o link só abre neste navegador.</p>':'')
    +(ok?'<a class="btn v-christmas create-button" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(msg)+'">'+ic('send')+'Enviar pelo WhatsApp</a>':btn('christmas',ic('send')+'Enviar pelo WhatsApp','type="button" disabled'))
    +'<div class="dv-row">'+btn('outline',ic('copy')+'Copiar link','type="button" data-m="copy2" data-u="'+esc(u)+'"'+(podeCopiar?'':' disabled'))+'<a class="btn v-outline" href="#carta-'+o.token+'" data-vm="1">'+ic('eye')+(est==='local'?'Ver prévia':'Ver cartinha')+'</a></div>'+nota
    +(ok?'<details class="dv-qr"><summary>Mostrar QR Code</summary><div class="dv-qrw"><p class="field-hint">A pessoa aponta a câmera do celular para o QR Code e abre a cartinha.</p><div id="qrbox" class="dv-qrbox"></div>'+btn('outline',ic('download')+'Baixar QR Code','type="button" data-m="qrdl"')+'</div></details>':'<div class="dv-qr off" aria-disabled="true">Mostrar QR Code</div>')+'</section>'}
@@ -3744,10 +3744,11 @@ function frameCtl(m){return '<div class="m-frame"><label><input type="checkbox" 
 mediaBlock=function(){var o=VCTX;VCTX=vxNow();try{
  var m=S.m,d=S.a.delivery||'wa',wa=d!=='print',pr=d!=='wa';
  var h='<div class="mc">'+mcPhoto(m,d)+(m.photoError?'<p class="mc-err" role="alert">'+esc(m.photoError)+'</p>':'')+(wa?mcAudio(m):'')+(d==='both'?'<p class="mc-note">O recado de voz aparece na versão digital.</p>':'')+(m.err?'<p class="mc-err" role="alert">'+esc(m.err)+'</p>':'')+'</div>';
+ if(d==='print')h+='<div class="quiz-fields" style="margin-top:1rem">'+vtList()+'<section class="fx-box">'+fxOpts()+'</section></div>';
  if(pr)h+='<div class="mc-extra">'+(m.photos[0]?frameCtl(m):'')+'<p class="field-hint">Prévia da folha A4</p><div class="a4prev" id="a4live">'+sheetHTML({k:S.kind,l:gen(),m:m})+'</div></div>';
  return h}finally{VCTX=o}};
 var q27=quiz0;quiz0=function(){var h=q27.apply(this,arguments);
- if(S.kind&&!S.preview&&S.step===5){var d=S.a.delivery||'wa',sub=d==='print'?'Se quiser, adicione uma foto à sua cartinha.':'Adicione uma foto ou um recado com a sua voz. Tudo é opcional.';
+ if(S.kind&&!S.preview&&S.step===5){var d=S.a.delivery||'wa',sub=d==='print'?'Se quiser, adicione uma foto, escolha a cor da moldura e veja os enfeites na prévia A4.':'Adicione uma foto ou um recado com a sua voz. Tudo é opcional.';
   h=h.replace(/(<div class="quiz-heading">[\s\S]*?<h1>)[^<]*(<\/h1><p>)[^<]*(<\/p>)/,function(x,a,b,c){return a+'Quer deixar a cartinha mais pessoal?'+b+sub+c})}
  return h};
 })();
@@ -3761,7 +3762,7 @@ var SRVGEN=0,SRVQ=Promise.resolve(),SRVT=null,SRVPOLL=null,SRVLAST=0,SRVLINK={},
 function cnOkUrl(u){return typeof u==='string'&&(/^https:\/\//.test(u)||(TESTE.ativo()&&/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(u)))}
 function srvApi(method,path,body,hdr){var o={method:method,headers:Object.assign({},hdr||{})};
  if(typeof Blob!=='undefined'&&body instanceof Blob){o.body=body;o.headers['content-type']=body.type}else if(body!==undefined){o.body=JSON.stringify(body);o.headers['content-type']='application/json'}
- return fetch(path,o).then(function(r){return r.json().catch(function(){return{}}).then(function(d){if(!r.ok){var e=new Error((d&&d.erro)||('http '+r.status));e.status=r.status;throw e}return d})})}
+ return fetch(path,o).then(function(r){return r.json().catch(function(){return{}}).then(function(d){if(!r.ok){var e=new Error((d&&d.erro)||('http '+r.status));e.status=r.status;e.code=d?.code;throw e}return d})})}
 function srvData2Blob(u){var m=/^data:([^,]*?);base64,(.*)$/.exec(u||'');if(!m)throw new Error('mídia inválida');var b=atob(m[2]),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return new Blob([a],{type:m[1]})}
 function srvHash(s){s=String(s||'');var h=s.length,st=Math.max(1,Math.ceil(s.length/3000));for(var i=0;i<s.length;i+=st)h=((h<<5)-h+s.charCodeAt(i))|0;return s.length+':'+h}
 function srvSigs(){var d=S.a.delivery||'wa',m=S.m;return{'foto-0':m.photos&&m.photos[0]?srvHash(m.photos[0]):'',audio:d!=='print'&&m.audio?srvHash(m.audio):'',video:d!=='print'&&m.video?m.video.url:''}}
@@ -3833,7 +3834,7 @@ var fin3=finish;finish=function(){var td=S.srvTd,a=td&&SRVLINK[td];fin3.apply(th
  var o=S.ped&&PED[S.ped];if(a&&o&&o.token===td){o.linkComprador=a.linkComprador;o.tc=a.tc;o.srvId=a.id;dbPut(o)}};
 /* entrega: link privado do comprador */
 var ep1=entregaPage;entregaPage=function(o){var h=ep1(o),A=SRVLINK[o.token]||(o.linkComprador?{linkComprador:o.linkComprador}:null);
- if(A&&A.linkComprador)h=h.replace('<p class="dv-again">','<section class="dv-sec dv-acesso" aria-label="Link de acesso"><p class="dv-acc-t">Guarde seu link de acesso</p><p class="field-hint">Copie e guarde este link para voltar à tela de entrega. Para presentear alguém, envie o link da cartinha.</p>'+btn('outline',ic('copy')+'Copiar meu link de acesso','type="button" data-m="copy2" data-u="'+esc(A.linkComprador)+'"')+'</section><p class="dv-again">');return h};
+ if(A&&A.linkComprador)h=h.replace('<p class="dv-again">','<section class="dv-sec dv-acesso" aria-label="Link de acesso"><p class="dv-acc-t">Precisa abrir sua cartinha de novo?</p><p class="field-hint">'+(o.teste?'Use o botão abaixo para copiar seu link de teste.':'Se perder o link, procure “Sua Cartinha de Natal está pronta!” no e-mail usado no pagamento. Se não encontrar, confira o spam ou o lixo eletrônico.')+'</p>'+btn('outline',ic('copy')+'Copiar meu link de acesso','type="button" data-m="copy2" data-u="'+esc(A.linkComprador)+'"')+'</section><p class="dv-again">');return h};
 (function(){var st=document.createElement('style');st.id='acesso';st.textContent='.dv-acesso{margin-top:18px;padding:16px;border:1px solid rgba(0,0,0,.12);border-radius:16px;background:#fffdf8;text-align:center}.dv-acc-t{font-weight:700;margin:0 0 6px;line-height:1.3}.dv-acesso .field-hint{margin:0 0 12px}';document.head.appendChild(st)})();
 /* abrir os links em outro aparelho: busca no servidor */
 function srvOkUrl(u){return /^\/api\/midia\/[A-Za-z0-9_-]+\/(foto-[0-4]|audio|video)$/.test(u||'')}
@@ -3909,12 +3910,28 @@ var rv9=recv;recv=function(t){return rv9(t).replace('Na demonstração, as carti
     if (cache.result) return statusPanel();
     const field = ([key,label,auto], isCard) => '<div class="field-group"><label for="cakto-'+key+'">'+label+'</label><input id="cakto-'+key+'" name="'+key+'" type="'+(key==='email'?'email':key==='cvv'?'password':'text')+'" autocomplete="'+auto+'" placeholder="'+examples[key]+'" '+(['phone','cpf','cardNumber','expMonth','expYear','cvv'].includes(key)?'inputmode="numeric" ':'')+'required maxlength="'+(key==='email'?200:key==='name'||key==='holderName'?120:24)+'"'+(isCard?'':' value="'+esc(savedForm[key]||'')+'"')+'></div>';
     const card=method==='credit_card';
-    return '<form id="cakto-form" data-method="'+method+'"><fieldset><legend>Dados do comprador</legend><p class="field-hint">O link de acesso será enviado para o e-mail informado abaixo, assim que a cartinha estiver pronta.</p>'+customerFields.map(item=>field(item,false)).join('')+'</fieldset>'+
+    return '<form id="cakto-form" data-method="'+method+'"><fieldset><legend>Dados do comprador</legend><p class="field-hint">Confira o endereço abaixo. Depois da aprovação, o link de acesso à cartinha vai para esse e-mail.</p>'+customerFields.map(item=>field(item,false)).join('')+'</fieldset>'+
       (card?'<fieldset><legend>Dados do cartão</legend><div class="cakto-card-example"><small>Exemplo de cartão</small><strong>•••• •••• •••• 1234</strong><span>PEDRO SILVA <b>08/30</b></span></div>'+
         cardFields.slice(0,2).map(item=>field(item,true)).join('')+'<div class="cakto-expiry">'+cardFields.slice(2).map(item=>field(item,true)).join('')+'</div><p class="field-hint">O CVV costuma ficar no verso do cartão.</p></fieldset>':'')+
       '<p id="cakto-error" class="pay-state err" role="alert"></p>'+
       btn('christmas',card?'Pagar '+PRECO:'Gerar Pix','type="button" data-cakto-pay'+(busy?' disabled':''))+'</form>';
   }
+
+
+async function pedirCobrancaCakto(order, payload, enviar=srvApi, esperar=ms=>new Promise(resolve=>setTimeout(resolve,ms))) {
+  const path='/api/cakto/cobrancas/'+order.id;
+  const headers={'x-token-comprador':order.tc};
+  const intervals=payload.method==='pix'?[2500,4000,5500]:[];
+  for(let attempt=0;;attempt++){
+    try {
+      return await enviar('POST',path,payload,headers);
+    } catch(error) {
+      const transient=error.code==='pix_em_processamento'||[500,502,503,504].includes(error.status)||error instanceof TypeError;
+      if(!transient||attempt>=intervals.length)throw error;
+      await esperar(intervals[attempt]);
+    }
+  }
+}
 
   const oldPix=pixPanel,oldCard=cardPanel;
   pixPanel=()=>render('pix')??oldPix();
@@ -3982,7 +3999,7 @@ var rv9=recv;recv=function(t){return rv9(t).replace('Na demonstração, as carti
       form.querySelector('#cakto-error').textContent='Confira o celular com DDD e o CPF.';return;
     }
     busy=true;
-    trigger.textContent=method==='pix'?'Gerando Pix…':'Processando…';
+    trigger.textContent=method==='pix'?'Preparando seu Pix…':'Processando…';
     form.querySelector('[data-cakto-pay]').disabled=true;
     let failure='';
     try {
@@ -3999,9 +4016,9 @@ var rv9=recv;recv=function(t){return rv9(t).replace('Na demonstração, as carti
         }
         currentAttempt=payload;
       }
-      state.result=await srvApi('POST','/api/cakto/cobrancas/'+order.id,currentAttempt,{'x-token-comprador':order.tc});
+      state.result=await pedirCobrancaCakto(order,currentAttempt);
       currentAttempt=null;
-    }catch(error){failure=error.status===409||error.status===400 ? error.message : 'Não conseguimos confirmar esta tentativa. Confira o painel da Cakto antes de tentar de novo.'}
+    }catch(error){failure=error.status===409||error.status===400 ? error.code==='pix_em_processamento'?'Seu Pix ainda está sendo preparado. Toque em Gerar Pix para consultar a mesma cobrança.':error.message : method==='pix'?'Não conseguimos obter o Pix agora. Toque em Gerar Pix para tentar novamente com os mesmos dados.':'Não conseguimos confirmar o pagamento agora. Confira seu cartão antes de tentar de novo.'}
     finally {
       busy=false;
       if(S.srv?.id===order.id && S.pay) {

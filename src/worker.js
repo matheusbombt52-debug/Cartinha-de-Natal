@@ -379,8 +379,10 @@ async function cobrarCakto(request, env, row) {
   if (!payment.ok) {
     const failure=await payment.json().catch(()=>null);
     console.error('Cakto cobrança '+method+': HTTP '+payment.status);
-    if(payment.status===409 && typeof failure?.detail==='string' && /em processamento/i.test(failure.detail)) return erro(409,'A Cakto ainda está processando o Pix. Aguarde alguns segundos e toque em Gerar Pix para consultar a mesma tentativa.');
-    return erro(502, 'A Cakto não confirmou a criação da cobrança. Confira os dados e o painel antes de tentar novamente.');
+    if(method==='pix' && payment.status===409 && typeof failure?.detail==='string' && /em processamento/i.test(failure.detail)) return json({code:'pix_em_processamento',erro:'Seu Pix ainda está sendo preparado.'},409);
+    if(payment.status===400 || payment.status===422) return erro(400,'Confira os dados de pagamento e tente novamente.');
+    if(payment.status===429) return erro(503,'O serviço de pagamento está ocupado.');
+    return erro(payment.status>=500?502:424, 'A Cakto não confirmou a criação da cobrança. Confira os dados e o painel antes de tentar novamente.');
   }
   const result = await payment.json();
   const resposta = {
