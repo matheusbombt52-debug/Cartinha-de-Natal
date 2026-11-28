@@ -2198,13 +2198,13 @@ article.letter-paper.dg.th-noite::before{border-style:solid}
 #cakto-form input::placeholder{color:#66675f;opacity:1}
 #cakto-form .field-group{min-width:0}
 #cakto-error:empty,#cakto-copy-status:empty{display:none}
-.cakto-expiry{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.65rem}
+.cakto-expiry{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}
 .cakto-card-example{display:grid;gap:.75rem;padding:1rem;border-radius:14px;background:#173f32;color:#fff6e0;width:min(100%,18rem);margin-bottom:.25rem}
 .cakto-card-example strong{letter-spacing:.1em}.cakto-card-example span{display:flex;justify-content:space-between}
 .cakto-qr{width:min(100%,200px);margin:0 auto .75rem}
 .cakto-qr canvas{display:block;width:100%;height:auto;background:white}
 #cakto-copy-status{text-align:center;font-size:.9rem}
-</style></head><body><div id="app"></div>
+</style><style>.cakto-loading{display:grid;justify-items:center;gap:.7rem;text-align:center;padding:1.4rem .7rem;color:#173f32}.cakto-loading .pay-spin{width:2rem;height:2rem}.cakto-loading p{margin:0;font-size:.92rem}@media(prefers-reduced-motion:reduce){.cakto-loading .pay-spin{animation:none}}</style></head><body><div id="app"></div>
 <style id="pagamento">
 /* v8: tela de pagamento */
 .pay-page{max-width:32rem;margin-inline:auto}
@@ -3873,8 +3873,7 @@ var rv9=recv;recv=function(t){return rv9(t).replace('Na demonstração, as carti
   const cardFields = [
     ['holderName','Nome no cartão','cc-name'],
     ['cardNumber','Número do cartão','cc-number'],
-    ['expMonth','Mês de validade','cc-exp-month'],
-    ['expYear','Ano de validade','cc-exp-year'],
+    ['expiry','Validade (MM/AA)','cc-exp'],
     ['cvv','Código de segurança','cc-csc']
   ];
   const customerFields = [['name','Nome completo','name'],['email','E-mail','email'],['phone','Celular com DDD','tel'],['cpf','CPF','off']];
@@ -3893,7 +3892,11 @@ var rv9=recv;recv=function(t){return rv9(t).replace('Na demonstração, as carti
     return sdkPromise;
   }
 
-  const examples={name:'Pedro Silva',email:'pedro@exemplo.com',phone:'(11) 99999-0000',cpf:'000.000.000-00',holderName:'PEDRO SILVA',cardNumber:'0000 0000 0000 0000',expMonth:'08',expYear:'2030',cvv:'324'};
+  const examples={name:'Pedro Silva',email:'pedro@exemplo.com',phone:'(11) 99999-0000',cpf:'000.000.000-00',holderName:'PEDRO SILVA',cardNumber:'0000 0000 0000 0000',expiry:'08/30',cvv:'324'};
+  function pixLoading(){
+    return '<div class="cakto-loading" role="status" aria-live="polite"><span class="pay-spin" aria-hidden="true"></span><strong>Gerando seu QR Code</strong><p>Estamos preparando seu Pix. Mantenha esta página aberta.</p></div>';
+  }
+
   function statusPanel() {
     const order = cache?.result;
     if (!order) return '';
@@ -3908,8 +3911,9 @@ var rv9=recv;recv=function(t){return rv9(t).replace('Na demonstração, as carti
     const marker = S.srv.id;
     if (cache?.id !== marker) {cache={id:marker};savedForm={};currentAttempt=null}
     if (cache.result) return statusPanel();
-    const field = ([key,label,auto], isCard) => '<div class="field-group"><label for="cakto-'+key+'">'+label+'</label><input id="cakto-'+key+'" name="'+key+'" type="'+(key==='email'?'email':key==='cvv'?'password':'text')+'" autocomplete="'+auto+'" placeholder="'+examples[key]+'" '+(['phone','cpf','cardNumber','expMonth','expYear','cvv'].includes(key)?'inputmode="numeric" ':'')+'required maxlength="'+(key==='email'?200:key==='name'||key==='holderName'?120:24)+'"'+(isCard?'':' value="'+esc(savedForm[key]||'')+'"')+'></div>';
+    const field = ([key,label,auto], isCard) => '<div class="field-group"><label for="cakto-'+key+'">'+label+'</label><input id="cakto-'+key+'" name="'+key+'" type="'+(key==='email'?'email':key==='cvv'?'password':'text')+'" autocomplete="'+auto+'" placeholder="'+examples[key]+'" '+(['phone','cpf','cardNumber','expiry','cvv'].includes(key)?'inputmode="numeric" ':'')+'required maxlength="'+(key==='email'?200:key==='name'||key==='holderName'?120:24)+'"'+(isCard?'':' value="'+esc(savedForm[key]||'')+'"')+'></div>';
     const card=method==='credit_card';
+    if(busy && cache.loadingPix) return pixLoading();
     return '<form id="cakto-form" data-method="'+method+'"><fieldset><legend>Dados do comprador</legend><p class="field-hint">Confira o endereço abaixo. Depois da aprovação, o link de acesso à cartinha vai para esse e-mail.</p>'+customerFields.map(item=>field(item,false)).join('')+'</fieldset>'+
       (card?'<fieldset><legend>Dados do cartão</legend><div class="cakto-card-example"><small>Exemplo de cartão</small><strong>•••• •••• •••• 1234</strong><span>PEDRO SILVA <b>08/30</b></span></div>'+
         cardFields.slice(0,2).map(item=>field(item,true)).join('')+'<div class="cakto-expiry">'+cardFields.slice(2).map(item=>field(item,true)).join('')+'</div><p class="field-hint">O CVV costuma ficar no verso do cartão.</p></fieldset>':'')+
@@ -3921,7 +3925,7 @@ var rv9=recv;recv=function(t){return rv9(t).replace('Na demonstração, as carti
 async function pedirCobrancaCakto(order, payload, enviar=srvApi, esperar=ms=>new Promise(resolve=>setTimeout(resolve,ms))) {
   const path='/api/cakto/cobrancas/'+order.id;
   const headers={'x-token-comprador':order.tc};
-  const intervals=payload.method==='pix'?[2500,4000,5500]:[];
+  const intervals=payload.method==='pix'?[2500,4000,6000,9000]:[];
   for(let attempt=0;;attempt++){
     try {
       return await enviar('POST',path,payload,headers);
@@ -3954,6 +3958,10 @@ async function pedirCobrancaCakto(order, payload, enviar=srvApi, esperar=ms=>new
 
   document.addEventListener('input',e=>{
     const field=e.target;
+    if(field.form?.id==='cakto-form' && field.name==='expiry'){
+      const digits=field.value.replace(/\D/g,'').slice(0,6);
+      field.value=digits.length>2?digits.slice(0,2)+'/'+digits.slice(2):digits;
+    }
     if (field.form?.id==='cakto-form' && customerFields.some(entry=>entry[0]===field.name)) savedForm[field.name]=field.value;
   });
 
@@ -3998,30 +4006,48 @@ async function pedirCobrancaCakto(order, payload, enviar=srvApi, esperar=ms=>new
     if (!/^55\d{10,11}$/.test(phone)||customer.cpf.length!==11) {
       form.querySelector('#cakto-error').textContent='Confira o celular com DDD e o CPF.';return;
     }
+    const expiration=/^(0[1-9]|1[0-2])\/?(\d{2}|\d{4})$/.exec(String(values.get('expiry')||'').trim());
+    if(method==='credit_card'&&!expiration){
+      form.querySelector('#cakto-error').textContent='Digite a validade no formato MM/AA, como 08/30.';
+      form.querySelector('[name=expiry]').focus();
+      return;
+    }
     busy=true;
     trigger.textContent=method==='pix'?'Preparando seu Pix…':'Processando…';
     form.querySelector('[data-cakto-pay]').disabled=true;
-    let failure='';
+    if(method==='pix'){
+      customerFields.forEach(([key])=>{savedForm[key]=String(values.get(key)||'')});
+      state.loadingPix=true;
+      keep();
+    }
+    let failure='', etapaCartao='';
     try {
       if (currentAttempt && (currentAttempt.method!==method || JSON.stringify(currentAttempt.customer)!==JSON.stringify(customer))) throw Error('Use os mesmos dados para consultar a tentativa já iniciada.');
       if (!currentAttempt) {
         const payload={method,customer,attempt:crypto.randomUUID()};
         if (method==='credit_card') {
+          etapaCartao='preparar';
           const instance=await sdk();
           await instance.completeAntifraudProfile();
           payload.profiling=await instance.getAntifraudReference();
-          const card={holderName:values.get('holderName'),cardNumber:digits(values.get('cardNumber')),expMonth:digits(values.get('expMonth')),expYear:digits(values.get('expYear')),cvv:digits(values.get('cvv'))};
+          if(!payload.profiling)throw Error('Antifraude indisponível');
+          etapaCartao='validar';
+          const card={holderName:values.get('holderName'),cardNumber:digits(values.get('cardNumber')),expMonth:expiration[1],expYear:expiration[2].slice(-2),cvv:digits(values.get('cvv'))};
           const {cardToken}=await instance.createToken(card);
+          if(!cardToken)throw Error('Token indisponível');
           payload.cardToken=cardToken;
+          etapaCartao='';
         }
         currentAttempt=payload;
       }
       state.result=await pedirCobrancaCakto(order,currentAttempt);
       currentAttempt=null;
-    }catch(error){failure=error.status===409||error.status===400 ? error.code==='pix_em_processamento'?'Seu Pix ainda está sendo preparado. Toque em Gerar Pix para consultar a mesma cobrança.':error.message : method==='pix'?'Não conseguimos obter o Pix agora. Toque em Gerar Pix para tentar novamente com os mesmos dados.':'Não conseguimos confirmar o pagamento agora. Confira seu cartão antes de tentar de novo.'}
+    }catch(error){failure=etapaCartao==='preparar'?'Não conseguimos preparar a verificação do cartão. Recarregue a página ou use o Pix.':etapaCartao==='validar'?'Confira o número, a validade e o código de segurança do cartão.':error.status===409||error.status===400 ? error.code==='pix_em_processamento'?'Seu Pix está demorando mais que o esperado. Toque em Gerar Pix para retomar a mesma tentativa.':error.message : method==='pix'?'O Pix ainda não está disponível. Toque em Gerar Pix para retomar a mesma tentativa.':'Não conseguimos confirmar o pagamento agora. Confira seu cartão antes de tentar de novo.'}
     finally {
       busy=false;
+      state.loadingPix=false;
       if(S.srv?.id===order.id && S.pay) {
+        if(method==='pix' && !state.result)keep();
         if (state.result) keep();
         else { const active=document.getElementById('cakto-form');if(active){const action=active.querySelector('[data-cakto-pay]');action.disabled=false;action.textContent=active.dataset.method==='pix'?'Gerar Pix':'Pagar '+PRECO;active.querySelector('#cakto-error').textContent=failure} }
       }
