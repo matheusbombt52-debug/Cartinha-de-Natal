@@ -4046,7 +4046,7 @@ const metaTracking = (() => {
   let started = false;
   const checkoutOrders = new Set();
   function eligible() {
-    return location.hostname === 'cartinha-de-natal.pv2.workers.dev'
+    return ['cartinha-de-natal.pv2.workers.dev', 'pv1.cartinhadenatal.site'].includes(location.hostname)
       && location.pathname === '/'
       && ['', '#criar'].includes(location.hash)
       && !TESTE.ativo();
